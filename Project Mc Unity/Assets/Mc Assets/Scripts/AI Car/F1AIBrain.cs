@@ -39,16 +39,12 @@ public class F1AIBrain : MonoBehaviour
     private void OnEnable()
     {
         CountdownManager.OnCountdownFinished += UnlockAIBrain;
-
-        // YENİ: Yarış bitiş eventine abone oluyoruz
         CheckpointManager.OnRaceFinished += StopAI;
     }
 
     private void OnDisable()
     {
         CountdownManager.OnCountdownFinished -= UnlockAIBrain;
-
-        // YENİ: Aboneliği kaldırıyoruz (Bellek sızıntısını önlemek için)
         CheckpointManager.OnRaceFinished -= StopAI;
     }
 
@@ -56,7 +52,6 @@ public class F1AIBrain : MonoBehaviour
 
     private void StopAI(Transform finisherCar, bool isPlayer)
     {
-        // SADECE bu yapay zeka yarışı bitirdiyse dur! (Sen bitirdin diye durmaz)
         if (finisherCar == transform.root)
         {
             isRaceStarted = false;
@@ -67,7 +62,6 @@ public class F1AIBrain : MonoBehaviour
     {
         if (!isRaceStarted || progressTracker == null || progressTracker.circuit == null || carController == null)
         {
-            // Yarış başlamadıysa veya BİTTİYSE motoru durdur ve tam fren yap
             if (carController != null) carController.ProvideInputs(0, 0, 1f);
             currentBrakeAI = 1f;
             return;
@@ -85,19 +79,16 @@ public class F1AIBrain : MonoBehaviour
         // --- GAZ VE FREN KARARI ---
         if (currentSpeed > targetSpeed + 5f)
         {
-            // FREN: Hız farkına göre fren şiddetini belirle
             currentBrakeAI = Mathf.Clamp01((currentSpeed - targetSpeed) / 15f);
             currentSpeedAI = 0f;
         }
         else if (currentSpeed < targetSpeed - 5f)
         {
-            // GAZ: Yapay zekanın kusursuz %100 gazını, maxThrottleLimit ile kısıtlıyoruz (İnsanlaştırma)
             currentBrakeAI = 0f;
             currentSpeedAI = maxThrottleLimit;
         }
         else
         {
-            // Trail Braking / Rölanti
             currentBrakeAI = 0f;
             currentSpeedAI = maxThrottleLimit * 0.4f;
         }
@@ -107,13 +98,10 @@ public class F1AIBrain : MonoBehaviour
         if (Vector3.Dot(transform.forward, dirToTarget) < -0.5f && currentSpeed < 5f)
         {
             currentBrakeAI = 1f;
-            currentSpeedAI = -maxThrottleLimit; // Geri viteste de limiti uygula
+            currentSpeedAI = -maxThrottleLimit;
         }
 
-        // --- DİREKSİYON REFLEKSİ (DUVARA ÇARPMAYI ÖNLEYEN GÜNCELLEME) ---
         float angleToDir = Vector3.SignedAngle(transform.forward, dirToTarget, Vector3.up);
-
-        // Önceki 40f değerini 20f'e düşürdük. AI artık ufak sapmalarda bile direksiyonu çok daha sert kırıp yola tutunacak!
         float steeringNormalized = Mathf.Clamp(angleToDir / 20f, -1f, 1f);
 
         currentTurnAI = (turnCurve != null && turnCurve.length > 0) ?
@@ -127,11 +115,8 @@ public class F1AIBrain : MonoBehaviour
     {
         if (carController == null || !carController.grounded()) return;
 
-        // --- GERÇEKÇİ FİZİKSEL FREN (DOĞAL YAVAŞLAMA) ---
-        // Lerp kullanıp aracı havada dondurmak yerine, aracın tersi yönünde gerçek bir fiziksel kuvvet uyguluyoruz.
         if (currentBrakeAI > 0.1f && carController.carVelocity.z > 1f)
         {
-            // Fren gücü * AI'ın frene basma şiddeti * Fizik motoru zamanlaması
             Vector3 brakingForce = -transform.forward * (naturalBrakeForce * currentBrakeAI);
             rb.AddForce(brakingForce, ForceMode.Acceleration);
         }

@@ -6,10 +6,6 @@ public class WheelModifier : MonoBehaviour
     [Tooltip("Aracın 4 tekerleğindeki MeshFilter bileşenleri")]
     [SerializeField] private MeshFilter[] wheelMeshFilters;
 
-    /// <summary>
-    /// Lobi UI sistemindeki jant butonlarından tetiklenecek asıl metod.
-    /// Modeller standart olduğu için sadece Mesh ve Material değişir.
-    /// </summary>
     public void ApplyWheel(Mesh newWheelMesh, Material newWheelMaterial)
     {
         if (wheelMeshFilters == null || wheelMeshFilters.Length == 0) return;
@@ -18,10 +14,7 @@ public class WheelModifier : MonoBehaviour
         {
             if (filter != null)
             {
-                // İskeleti değiştir
                 filter.sharedMesh = newWheelMesh;
-
-                // Aynı obje üzerindeki Renderer'ı bul ve materyali çak
                 MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
                 if (renderer != null)
                 {

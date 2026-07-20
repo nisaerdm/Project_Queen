@@ -6,7 +6,6 @@ using UnityEngine;
 
 public class RacePlacementManager : MonoBehaviour
 {
-    // UI scriptlerin bu evente abone olarak güncel sıralamayı çekecek
     public static event Action<List<Transform>> OnPlacementUpdated;
 
     [Header("Optimizasyon Ayarları")]
@@ -20,8 +19,6 @@ public class RacePlacementManager : MonoBehaviour
     private void Start()
     {
         checkpointManager = UnityEngine.Object.FindFirstObjectByType<CheckpointManager>();
-        
-        // Sahnede "Car" tag'ine sahip tüm araçları bul ve sisteme kaydet
         GameObject[] cars = GameObject.FindGameObjectsWithTag("Car");
         foreach (var car in cars)
         {
@@ -48,12 +45,10 @@ public class RacePlacementManager : MonoBehaviour
 
     private void SortCars()
     {
-        // 1. Hem Player'ı hem de yapay zeka araçlarını (Car) listeye topla
         List<GameObject> allVehiclesInScene = new List<GameObject>();
         allVehiclesInScene.AddRange(GameObject.FindGameObjectsWithTag("Player"));
         allVehiclesInScene.AddRange(GameObject.FindGameObjectsWithTag("Car"));
 
-        // 2. Sahnedeki araç sayısı, bizim takip listemizden farklıysa listeyi yenile
         if (activeCars.Count != allVehiclesInScene.Count)
         {
             activeCars.Clear();
@@ -65,10 +60,7 @@ public class RacePlacementManager : MonoBehaviour
             }
         }
 
-        // Eğer henüz sahnede hiç araba yoksa sıralama yapma
         if (activeCars.Count == 0) return;
-
-        // 3. Sıralama Mantığı
         activeCars = activeCars.OrderByDescending(car => checkpointManager.GetCarLap(car))
                                .ThenByDescending(car => checkpointManager.GetCarNextCheckpointIndex(car))
                                .ThenBy(car => Vector3.Distance(car.position, checkpointManager.GetNextCheckpoint(car).position))

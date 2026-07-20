@@ -35,7 +35,6 @@ public class CheckpointManager : MonoBehaviour
 
     public void RegisterCar(Transform carTransform)
     {
-        // Gelen objenin her zaman KÖK obje olduğundan emin oluyoruz
         Transform rootCar = carTransform.root;
 
         if (!carTrackers.ContainsKey(rootCar))
@@ -46,7 +45,6 @@ public class CheckpointManager : MonoBehaviour
 
     public void PlayerThroughCheckpoint(CheckpointSingle checkpoint, Transform carTransform)
     {
-        // BUG FIX: Tekerlek veya kasa collider'ı çarpsa bile her zaman ana aracı bul!
         Transform rootCar = carTransform.root;
 
         if (!carTrackers.ContainsKey(rootCar)) RegisterCar(rootCar);
@@ -65,7 +63,7 @@ public class CheckpointManager : MonoBehaviour
                     int completedLap = progress.currentLap - 1;
 
                     // BİLDİRİM GERİ GELDİ (Tur)
-                    Debug.Log($"🏁 [{rootCar.name}] Tur {completedLap} Tamamlandı!");
+                    Debug.Log($" [{rootCar.name}] Tur {completedLap} Tamamlandı!");
 
                     OnLapCompleted?.Invoke(rootCar, completedLap);
 
@@ -78,14 +76,14 @@ public class CheckpointManager : MonoBehaviour
             }
 
             // BİLDİRİM GERİ GELDİ (Doğru Geçiş)
-            Debug.Log($"✅ [{rootCar.name}] Doğru Geçiş! Sıradaki Checkpoint: {((progress.nextCheckpointIndex + 1) % checkpointList.Count)}");
+            Debug.Log($" [{rootCar.name}] Doğru Geçiş! Sıradaki Checkpoint: {((progress.nextCheckpointIndex + 1) % checkpointList.Count)}");
 
             progress.nextCheckpointIndex = (progress.nextCheckpointIndex + 1) % checkpointList.Count;
         }
         else
         {
             // BİLDİRİM GERİ GELDİ (Yanlış Yön)
-            Debug.Log($"❌ [{rootCar.name}] Yanlış Yön veya Atlanan Checkpoint! (Beklenen: {progress.nextCheckpointIndex}, Girilen: {hitCheckpointIndex})");
+            Debug.Log($" [{rootCar.name}] Yanlış Yön veya Atlanan Checkpoint! (Beklenen: {progress.nextCheckpointIndex}, Girilen: {hitCheckpointIndex})");
             OnWrongWay?.Invoke(rootCar);
         }
     }

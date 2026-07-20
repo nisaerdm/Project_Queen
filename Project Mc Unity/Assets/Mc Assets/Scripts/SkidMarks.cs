@@ -30,7 +30,6 @@ namespace ArcadeVP
 
         private void FixedUpdate()
         {
-            // Bütün hesaplamayı ArcadeVehicleController'a devrettik!
             if (carController != null && carController.IsTireSkidding())
             {
                 skidMark.emitting = true;

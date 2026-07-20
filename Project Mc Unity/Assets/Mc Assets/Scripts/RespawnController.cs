@@ -44,23 +44,18 @@ public class RespawnController : MonoBehaviour
         isRespawning = true;
         Transform targetPoint = checkpointManager.GetLastPassedCheckpoint(transform);
 
-        // YENİ: Yere saplanmayı veya map altına düşmeyi engellemek için hafif havadan bırakıyoruz
         Vector3 safePosition = targetPoint.position + (Vector3.up * 1.5f);
 
         rb.isKinematic = true;
 
-        // 1. Ana objeyi ışınla
         transform.position = safePosition;
         transform.rotation = targetPoint.rotation;
 
-        // 2. BUG FIX (ArcadeVP Asıl Fizik Küresi): 
-        // Aracın kendi kasası ışınlansa bile görünmez fizik küresi düştüğü yerde kalıyordu!
         ArcadeVP.ArcadeVehicleController carController = GetComponent<ArcadeVP.ArcadeVehicleController>();
         if (carController != null && carController.carBody != null)
         {
-            carController.carBody.isKinematic = true; // Kürenin de fiziğini dondur
+            carController.carBody.isKinematic = true;
 
-            // Küreyi de kasayla aynı yere ışınla
             carController.carBody.transform.position = safePosition;
             carController.carBody.transform.rotation = targetPoint.rotation;
 

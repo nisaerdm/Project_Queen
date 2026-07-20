@@ -21,7 +21,6 @@ public class AIFailSafeController : MonoBehaviour
 
     private void OnEnable()
     {
-        // Fail-Safe SADECE geri sayım bittikten sonra tetiklenir
         CountdownManager.OnCountdownFinished += StartMonitoring;
     }
 

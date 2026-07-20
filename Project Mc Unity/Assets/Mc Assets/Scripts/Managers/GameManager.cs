@@ -16,7 +16,6 @@ public class GameManager : MonoBehaviour
     {
         CinematicIntroManager.OnIntroFinished += HandleIntroFinished;
         CountdownManager.OnCountdownFinished += HandleCountdownFinished;
-        // Bitiş eventine abone ol
         CheckpointManager.OnRaceFinished += HandleRaceFinished;
     }
 
@@ -24,7 +23,6 @@ public class GameManager : MonoBehaviour
     {
         CinematicIntroManager.OnIntroFinished -= HandleIntroFinished;
         CountdownManager.OnCountdownFinished -= HandleCountdownFinished;
-        // Aboneliği kaldır
         CheckpointManager.OnRaceFinished -= HandleRaceFinished;
     }
 
@@ -53,19 +51,15 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("🏁 OYUNCU YARIŞI BİTİRDİ! 🏁");
 
-            // 1. Kontrolleri kilitle (Araç fren yapmayıp serbest süzülebilir veya ArcadeVP'den motor gücünü 0'a çekebilirsin)
             LockPlayerInputs(true);
-
-            // 2. Süreyi durdur
             raceTimer.StopTimer();
 
-            // 3. UI Eventlerini tetikle (Bitiş ekranını aç vb.)
+            // UI Eventlerini tetikle (Bitiş ekranını aç vb.)
             // İlerleyen aşamalarda buraya: UIManager.ShowGameOverScreen() eklenecek.
         }
         else
         {
             Debug.Log($"🤖 Bot {car.name} yarışı tamamladı!");
-            // İstersen bot bitirdiğinde botun beynini (F1AIBrain) kapatabilirsin.
         }
     }
 

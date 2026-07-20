@@ -5,7 +5,6 @@ using TMPro;
 
 public class CountdownManager : MonoBehaviour
 {
-    // Geri sayım bittiğinde GameManager'ı ve diğer sistemleri uyaracak event 
     public static event Action OnCountdownFinished;
 
     [SerializeField] private TextMeshProUGUI countdownText;
@@ -27,9 +26,9 @@ public class CountdownManager : MonoBehaviour
         }
 
         countdownText.text = "BAŞLA!";
-        OnCountdownFinished?.Invoke(); // Event fırlatıldı!
+        OnCountdownFinished?.Invoke();
 
         yield return new WaitForSeconds(1f);
-        countdownText.gameObject.SetActive(false); // Ekranda yer kaplamaması için kapatıyoruz
+        countdownText.gameObject.SetActive(false);
     }
 }

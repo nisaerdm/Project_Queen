@@ -22,14 +22,12 @@ public class LobbyCameraManager : MonoBehaviour
 
     private void HandleCameraChange(LobbyEventManager.LobbyState state)
     {
-        // Önce tüm kameraların önceliğini sıfırlıyoruz (10 yapıyoruz)
         vcamMainMenu.Priority = 10;
         vcamPlay.Priority = 10;
         vcamGarage.Priority = 10;
         vcamSettings.Priority = 10;
         vcamCredits.Priority = 10;
 
-        // İstenen kameranın önceliğini artırıyoruz (12 yapıyoruz) ki Cinemachine geçiş yapsın
         switch (state)
         {
             case LobbyEventManager.LobbyState.MainMenu:

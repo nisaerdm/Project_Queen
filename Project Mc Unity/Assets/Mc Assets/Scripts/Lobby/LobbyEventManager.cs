@@ -2,7 +2,6 @@ using System;
 
 public static class LobbyEventManager
 {
-    // Menü durumlarını tuttuğumuz Enum
     public enum LobbyState
     {
         MainMenu,
@@ -11,7 +10,5 @@ public static class LobbyEventManager
         Settings,
         Credits
     }
-
-    // Herhangi bir menü değiştiğinde tetiklenecek C# Action'ımız
     public static Action<LobbyState> OnMenuStateChanged;
 }

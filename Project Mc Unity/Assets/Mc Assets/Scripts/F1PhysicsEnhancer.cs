@@ -26,15 +26,11 @@ public class F1PhysicsEnhancer : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         carController = GetComponent<ArcadeVehicleController>();
-
-        // 1. Ağırlık Merkezini (Center of Mass) aşağı çekiyoruz.
-        // Bu, aracın virajlarda bir F1 aracı gibi tok dönmesini ve takla atmamasını sağlar.
         rb.centerOfMass += centerOfMassOffset;
     }
 
     private void FixedUpdate()
     {
-        // Eğer araç havadaysa veya yerle teması kesildiyse downforce uygulamıyoruz.
         if (!carController.grounded()) return;
 
         ApplyDynamicDownforce();
@@ -43,29 +39,23 @@ public class F1PhysicsEnhancer : MonoBehaviour
 
     private void ApplyDynamicDownforce()
     {
-        // Aracın ileri yönlü hızını alıyoruz
         float forwardSpeed = carController.carVelocity.z;
 
-        // F1 araçlarında downforce hızla beraber artar.
         if (forwardSpeed > minSpeedForDownforce)
         {
             float downforceAmount = forwardSpeed * dynamicDownforceMultiplier;
-            // Aracı yerel (local) alt ekseninde (-transform.up) aşağı doğru itiyoruz
             rb.AddForce(-transform.up * downforceAmount, ForceMode.Force);
         }
     }
 
     private void LimitReverseSpeed()
     {
-        // carVelocity.z negatifse araç geri geri gidiyor demektir.
         float currentZVelocity = carController.carVelocity.z;
 
         if (currentZVelocity < -maxReverseSpeed)
         {
-            // Unity 6 standartlarına uygun olarak linearVelocity kullanıyoruz
             Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
 
-            // Eğer geri geri gitme hızı limiti aştıysa, hızı kelepçeliyoruz (Clamp)
             if (localVel.z < -maxReverseSpeed)
             {
                 localVel.z = -maxReverseSpeed;
@@ -74,7 +64,6 @@ public class F1PhysicsEnhancer : MonoBehaviour
         }
     }
 
-    // Geliştirici kolaylığı: Seçiliyken Editor'de ağırlık merkezini kırmızı bir top olarak gösterir
     private void OnDrawGizmosSelected()
     {
         if (Application.isPlaying && rb != null)
