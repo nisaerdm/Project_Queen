@@ -9,71 +9,75 @@ namespace ArcadeVP
     {
         public enum GroundCheckType { RayCast, SphereCast };
         public enum MovementMode { Velocity, AngularVelocity };
-        
+
         public MovementMode movementMode;
-        
+
         [FormerlySerializedAs("GroundCheck")]
         public GroundCheckType groundCheck;
-        
+
         public LayerMask drivableSurface;
 
         [FormerlySerializedAs("MaxSpeed")]
         public float maxSpeed;
-        
+
         [FormerlySerializedAs("accelaration")]
         public float acceleration;
-        
+
         public float turn;
         public float gravity = 7f;
         public float downforce = 5f;
-        
+
         [FormerlySerializedAs("AirControl")]
         [Tooltip("if true : can turn vehicle in air")]
         public bool airControl = false;
-        
+
         [Tooltip("if true : vehicle will drift instead of brake while holding space")]
         public bool kartLike = false;
-        
+
         [Tooltip("turn more while drifting (while holding space) only if kart Like is true")]
         public float driftMultiplier = 1.5f;
+
+        [Header("Drift & Skid Settings")]
+        [Tooltip("Aracın yanlamasına kayma hızı bu değeri geçince lastik izi ve sesi başlar. Düşürdükçe daha kolay iz çıkarır.")]
+        public float driftThreshold = 4.0f;
 
         public Rigidbody rb;
         public Rigidbody carBody;
 
         [HideInInspector]
         public RaycastHit hit;
-        
+
         public AnimationCurve frictionCurve;
         public AnimationCurve turnCurve;
         public PhysicsMaterial frictionMaterial;
-        
+
         [Header("Visuals")]
         [FormerlySerializedAs("BodyMesh")]
         public Transform bodyMesh;
-        
+
         [FormerlySerializedAs("FrontWheels")]
         public Transform[] frontWheels = new Transform[2];
-        
+
         [FormerlySerializedAs("RearWheels")]
         public Transform[] rearWheels = new Transform[2];
-        
+
         [HideInInspector]
         public Vector3 carVelocity;
 
         [Range(0, 10)]
         [FormerlySerializedAs("BodyTilt")]
         public float bodyTilt;
-        
+
         [Header("Audio settings")]
         public AudioSource engineSound;
-        
+
         [Range(0, 1)]
         public float minPitch;
-        
+
         [Range(1, 3)]
         [FormerlySerializedAs("MaxPitch")]
         public float maxPitch;
-        
+
         [FormerlySerializedAs("SkidSound")]
         public AudioSource skidSound;
 
@@ -109,7 +113,9 @@ namespace ArcadeVP
         public void AudioManager()
         {
             engineSound.pitch = Mathf.Lerp(minPitch, maxPitch, Mathf.Abs(carVelocity.z) / maxSpeed);
-            if (Mathf.Abs(carVelocity.x) > 10 && grounded())
+
+            // Artık sadece yana kaymayı değil, F1 frenini ve sert AI dönüşlerini de dinliyor
+            if (IsTireSkidding())
             {
                 skidSound.mute = false;
             }
@@ -134,10 +140,10 @@ namespace ArcadeVP
             {
                 float sign = Mathf.Sign(carVelocity.z);
                 float TurnMultiplyer = turnCurve.Evaluate(carVelocity.magnitude / maxSpeed);
-                if (kartLike && brakeInput > 0.1f) 
-                { 
-                    TurnMultiplyer *= driftMultiplier; 
-                } 
+                if (kartLike && brakeInput > 0.1f)
+                {
+                    TurnMultiplyer *= driftMultiplier;
+                }
 
                 if (accelerationInput > 0.1f || carVelocity.z > 1)
                 {
@@ -252,7 +258,7 @@ namespace ArcadeVP
             {
                 isGrounded = Physics.SphereCast(origin, radius + 0.1f, direction, out hit, maxdistance, drivableSurface);
             }
-            else 
+            else
             {
                 isGrounded = false;
             }
@@ -263,19 +269,40 @@ namespace ArcadeVP
             return isGrounded;
         }
 
+        /// <summary>
+        /// Aracın lastik izi/sesi çıkarıp çıkarmayacağını hesaplayan merkezi Lego parçası.
+        /// </summary>
+        public bool IsTireSkidding()
+        {
+            // Araç havadaysa iz çıkmaz
+            if (!grounded()) return false;
+
+            // 1. Klasik Yana Kayma (Senin klavye hareketlerinle tetiklenen durum)
+            bool lateralSlip = Mathf.Abs(carVelocity.x) > driftThreshold;
+
+            // 2. F1 Tekerlek Kilitlemesi (Yüksek hızda sert fren yaparken iz bırakma)
+            bool heavyBraking = brakeInput > 0.4f && carVelocity.z > 20f;
+
+            // 3. Yüksek Hızda Keskin Dönüş (AI'ın pürüzsüz ama yüksek G kuvvetli dönüşleri)
+            bool sharpTurn = Mathf.Abs(steeringInput) > 0.6f && carVelocity.z > 35f;
+
+            // Üçünden biri bile geçerliyse lastik izi çıksın!
+            return lateralSlip || heavyBraking || sharpTurn;
+        }
+
         private void OnDrawGizmos()
         {
             if (rb == null || Application.isPlaying) return;
-            
+
             SphereCollider sphere = rb.GetComponent<SphereCollider>();
             if (sphere == null) return;
-            
+
             float rad = sphere.radius;
             float width = 0.02f;
-            
+
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(rb.transform.position + ((rad + width) * Vector3.down), new Vector3(2 * rad, 2 * width, 4 * rad));
-            
+
             BoxCollider box = GetComponent<BoxCollider>();
             if (box != null)
             {

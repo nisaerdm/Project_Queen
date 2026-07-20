@@ -2,20 +2,20 @@ using UnityEngine;
 
 public class CheckpointSingle : MonoBehaviour
 {
-    private CheckpointManager trackManager;
+    private CheckpointManager checkpointManager;
 
-    // Yönetici oyun başlarken kendini bu noktalara tanıtacak
     public void Initialize(CheckpointManager manager)
     {
-        trackManager = manager;
+        checkpointManager = manager;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // İçinden geçen şey bizim arabamızsa (Tag'i Player olarak ayarli olmalı)
-        if (other.CompareTag("Player"))
+        // KONTROL: Çarpan obje "Player" (Sen) veya "Car" (AI Bot) ise kabul et
+        if (other.CompareTag("Player") || other.CompareTag("Car"))
         {
-            trackManager.PlayerThroughCheckpoint(this, other.transform);
+            // Arabanın tekerleği bile çarpsa, .root ile her zaman kasanın kök objesini yolla
+            checkpointManager.PlayerThroughCheckpoint(this, other.transform.root);
         }
     }
 }

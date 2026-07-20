@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 962d780cad6b94845ac4344abf307c43
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220740
+  packageName: Arcade Vehicle Ai
+  packageVersion: 1.0
+  assetPath: Assets/Ash Assets/Arcade Vehicle Ai/Scripts/AiSkidMarks.cs
+  uploadId: 706315

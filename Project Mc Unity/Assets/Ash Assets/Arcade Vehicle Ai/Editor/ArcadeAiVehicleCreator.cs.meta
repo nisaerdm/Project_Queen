@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a55dda7dfdb317f44adb5cd3f3d99e3a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220740
+  packageName: Arcade Vehicle Ai
+  packageVersion: 1.0
+  assetPath: Assets/Ash Assets/Arcade Vehicle Ai/Editor/ArcadeAiVehicleCreator.cs
+  uploadId: 706315
