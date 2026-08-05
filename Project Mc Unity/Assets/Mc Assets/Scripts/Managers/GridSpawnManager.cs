@@ -30,11 +30,25 @@ public class GridSpawnManager : MonoBehaviour
 
         List<GameObject> spawnedVehicles = new List<GameObject>();
 
-        int spawnCount = Mathf.Min(vehiclePrefabs.Count, spawnPoints.Count);
+        // YENİLİK: Lobiden seçilen araç sayısını oku (Varsayılan 2)
+        int targetCarCount = PlayerPrefs.GetInt("Race_Cars", 2);
+
+        // Güvenlik kalkanı: İstenen araç sayısı, elimizdeki prefab veya grid noktasından fazla olamaz
+        int spawnCount = Mathf.Min(targetCarCount, vehiclePrefabs.Count, spawnPoints.Count);
+
+        List<Transform> activeSpawnPoints = spawnPoints.GetRange(0, spawnCount);
+
+        for (int i = 0; i < activeSpawnPoints.Count; i++)
+        {
+            int randomIndex = UnityEngine.Random.Range(i, activeSpawnPoints.Count);
+            Transform temp = activeSpawnPoints[i];
+            activeSpawnPoints[i] = activeSpawnPoints[randomIndex];
+            activeSpawnPoints[randomIndex] = temp;
+        }
 
         for (int i = 0; i < spawnCount; i++)
         {
-            GameObject vehicle = Instantiate(vehiclePrefabs[i], spawnPoints[i].position, spawnPoints[i].rotation);
+            GameObject vehicle = Instantiate(vehiclePrefabs[i], activeSpawnPoints[i].position, activeSpawnPoints[i].rotation);
             vehicle.name = $"Player_{i + 1}";
 
             if (i > 0)
@@ -49,8 +63,7 @@ public class GridSpawnManager : MonoBehaviour
             spawnedVehicles.Add(vehicle);
         }
 
-        Debug.Log($"[GridSpawnManager] {spawnCount} adet araç başarıyla grid'e yerleştirildi.");
-
+        Debug.Log($"[GridSpawnManager] {spawnCount} adet araç başarıyla boşluksuz ve rastgele grid noktalarına yerleştirildi.");
         OnVehiclesSpawned?.Invoke(spawnedVehicles);
     }
 
@@ -62,7 +75,6 @@ public class GridSpawnManager : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
-
         vehicle.transform.position = targetCheckpoint.position;
         vehicle.transform.rotation = targetCheckpoint.rotation;
     }

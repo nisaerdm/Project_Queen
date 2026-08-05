@@ -11,4 +11,6 @@ public static class LobbyEventManager
         Credits
     }
     public static Action<LobbyState> OnMenuStateChanged;
+
+    public static Action<int> OnColorSelected;
 }

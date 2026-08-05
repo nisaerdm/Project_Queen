@@ -4,6 +4,7 @@ namespace ArcadeVP
 {
     public class SkidMarks : MonoBehaviour
     {
+        //Aracın teker izi
         public ArcadeVehicleController carController;
 
         private TrailRenderer skidMark;

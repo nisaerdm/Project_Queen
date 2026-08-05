@@ -12,8 +12,8 @@ public class CheckpointManager : MonoBehaviour
     [Tooltip("Haritadaki tüm checkpointleri SIRASIYLA buraya sürükle")]
     [SerializeField] private List<CheckpointSingle> checkpointList;
 
-    [Tooltip("Toplam kaç tur atılacak?")]
-    [SerializeField] private int totalLaps = 15;
+    [Tooltip("Toplam kaç tur atılacak? (Lobi'den otomatik okunur)")]
+    [SerializeField] private int totalLaps = 1;
 
     public int TotalLaps => totalLaps;
 
@@ -27,6 +27,9 @@ public class CheckpointManager : MonoBehaviour
 
     private void Start()
     {
+        // YENİLİK: Lobi'de seçilen tur sayısını cihaza yazılan yerden çekiyoruz
+        totalLaps = PlayerPrefs.GetInt("Race_Laps", 1);
+
         foreach (CheckpointSingle cp in checkpointList)
         {
             cp.Initialize(this);
@@ -61,10 +64,7 @@ public class CheckpointManager : MonoBehaviour
                 if (progress.currentLap > 1)
                 {
                     int completedLap = progress.currentLap - 1;
-
-                    // BİLDİRİM GERİ GELDİ (Tur)
                     Debug.Log($" [{rootCar.name}] Tur {completedLap} Tamamlandı!");
-
                     OnLapCompleted?.Invoke(rootCar, completedLap);
 
                     if (completedLap >= totalLaps)
@@ -75,14 +75,11 @@ public class CheckpointManager : MonoBehaviour
                 }
             }
 
-            // BİLDİRİM GERİ GELDİ (Doğru Geçiş)
             Debug.Log($" [{rootCar.name}] Doğru Geçiş! Sıradaki Checkpoint: {((progress.nextCheckpointIndex + 1) % checkpointList.Count)}");
-
             progress.nextCheckpointIndex = (progress.nextCheckpointIndex + 1) % checkpointList.Count;
         }
         else
         {
-            // BİLDİRİM GERİ GELDİ (Yanlış Yön)
             Debug.Log($" [{rootCar.name}] Yanlış Yön veya Atlanan Checkpoint! (Beklenen: {progress.nextCheckpointIndex}, Girilen: {hitCheckpointIndex})");
             OnWrongWay?.Invoke(rootCar);
         }

@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
+    //Tüm oyunun beyni. Her şeye karar veren script.
     [Header("Lego Sistem Modülleri")]
     [SerializeField] private GridSpawnManager gridManager;
     [SerializeField] private CinematicIntroManager introManager;

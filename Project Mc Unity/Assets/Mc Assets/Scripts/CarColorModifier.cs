@@ -3,32 +3,58 @@ using UnityEngine;
 public class CarColorModifier : MonoBehaviour
 {
     [Header("Boya Ayarları")]
-    [Tooltip("Aracın gövdesini temsil eden ve colormap materyalini kullanan MeshRenderer")]
-    [SerializeField] private MeshRenderer bodyRenderer;
+    [Tooltip("Aracın boyanmasını istediğin BÜTÜN parçalarını (Renderer) buraya ekle.")]
+    [SerializeField] private Renderer[] bodyRenderers;
 
-    private int colorPropertyID = Shader.PropertyToID("_BaseColor");
+    [Tooltip("Kullanılabilir renk materyalleri (0: Kırmızı, 1: Mavi vs.)")]
+    [SerializeField] private Material[] colorMaterials;
 
-    public void ApplyColor(Color newColor)
+    [Header("Veri Kaydı")]
+    [Tooltip("Hangi oyuncunun rengini okuyacağız? (Split-screen için P1_Color, P2_Color)")]
+    [SerializeField] private string playerPrefsKey = "P1_Color";
+
+    private void Start()
     {
-        if (bodyRenderer == null) return;
-
-        MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
-
-        bodyRenderer.GetPropertyBlock(propertyBlock);
-
-        propertyBlock.SetColor(colorPropertyID, newColor);
-
-        bodyRenderer.SetPropertyBlock(propertyBlock);
+        int savedColorIndex = PlayerPrefs.GetInt(playerPrefsKey, 0);
+        ApplyColor(savedColorIndex);
     }
 
-    // --- SUNUM VE TEST KISMI ---
-    [Header("Test Ayarları")]
-    [Tooltip("Ekibe gösterirken buradan istediğin rengi seçip test butonuna basabilirsin")]
-    public Color testColor = Color.green;
-
-    public void TestRenginiUygula()
+    private void OnEnable()
     {
-        ApplyColor(testColor);
-        Debug.Log($"[Araç Boyandı] Yeni Renk: {testColor}");
+        // Renk değiştirme olayını dinlemeye başla
+        LobbyEventManager.OnColorSelected += HandleColorSelected;
+    }
+
+    private void OnDisable()
+    {
+        // Dinlemeyi bırak
+        LobbyEventManager.OnColorSelected -= HandleColorSelected;
+    }
+
+    private void HandleColorSelected(int colorIndex)
+    {
+        // 1. Yeni rengi cihaza kaydet
+        PlayerPrefs.SetInt(playerPrefsKey, colorIndex);
+        PlayerPrefs.Save();
+
+        // 2. Aracı anında boya
+        ApplyColor(colorIndex);
+    }
+
+    public void ApplyColor(int colorIndex)
+    {
+        // Dizi boşsa veya materyal yoksa iptal et
+        if (colorMaterials.Length == 0 || bodyRenderers == null || bodyRenderers.Length == 0) return;
+
+        colorIndex = Mathf.Clamp(colorIndex, 0, colorMaterials.Length - 1);
+
+        // Bütün parçaları döngüye sokup tek tek boyuyoruz
+        foreach (Renderer partRenderer in bodyRenderers)
+        {
+            if (partRenderer != null)
+            {
+                partRenderer.material = colorMaterials[colorIndex];
+            }
+        }
     }
 }

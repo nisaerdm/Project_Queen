@@ -5,6 +5,7 @@ using TMPro;
 
 public class CountdownManager : MonoBehaviour
 {
+    //Tur süresi
     public static event Action OnCountdownFinished;
 
     [SerializeField] private TextMeshProUGUI countdownText;

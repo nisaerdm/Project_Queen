@@ -5341,7 +5341,7 @@ MonoBehaviour:
   drivableSurface:
     serializedVersion: 2
     m_Bits: 64
-  maxSpeed: 100
+  maxSpeed: 60
   acceleration: 40
   turn: 12
   gravity: 15
@@ -5457,6 +5457,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efcc237ff47a3cb4287a0ebffd454c67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::F1PlayerInput
+  throttleSpeed: 1.5
+  autoAcceleration: 1
   brakeForce: 10
 --- !u!114 &812275469580275055
 MonoBehaviour:
@@ -5563,7 +5565,53 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarColorModifier
   bodyRenderer: {fileID: 2473051610446785305}
-  testColor: {r: 0, g: 1, b: 0, a: 1}
+  colorMaterials:
+  - {fileID: 2100000, guid: 1b4b44f3570791142aa92d9b9181aef8, type: 2}
+  - {fileID: 2100000, guid: 7a10149fcfb1b2d4d94b0f16e42f195d, type: 2}
+  - {fileID: 2100000, guid: 8c67f284c3dc78745a8e758fe06cd605, type: 2}
+  - {fileID: 2100000, guid: 3f243df88c8a89744ba427f71a438554, type: 2}
+  - {fileID: 2100000, guid: 8f158cb2de6fb97499a6b0d5d10f2ac2, type: 2}
+  - {fileID: 2100000, guid: 425e5c88fb768eb4ab600131c69e193a, type: 2}
+  - {fileID: 2100000, guid: 5b0b33563aae24a448333fd696f42f14, type: 2}
+  - {fileID: 2100000, guid: 5574c0e3989aaa34da849b3c729e6263, type: 2}
+  - {fileID: 2100000, guid: 613a0c64092824c4289932599f1efd7f, type: 2}
+  - {fileID: 2100000, guid: 85b80ea7e39a65c4da236b9540af5b43, type: 2}
+  - {fileID: 2100000, guid: d3cf96a39e3d4124dab4bd2560fb6734, type: 2}
+  - {fileID: 2100000, guid: ce2ee5bb8c900b844810f15365b43587, type: 2}
+  - {fileID: 2100000, guid: d566f95bbed0ca54b818e501b1dff238, type: 2}
+  - {fileID: 2100000, guid: de4718fd40832d34cbabe646fe7bd3e7, type: 2}
+  - {fileID: 2100000, guid: cc69241dbc934754cb4739172259b25d, type: 2}
+  - {fileID: 2100000, guid: 2f764bf1459ac7a459fe04463ec34c0e, type: 2}
+  - {fileID: 2100000, guid: 4def725b1116d4b4e80291023bd27ddc, type: 2}
+  - {fileID: 2100000, guid: 0cb0dfdf2e0fb3e4e8ecb8d60e47f732, type: 2}
+  - {fileID: 2100000, guid: 7b61ff38deceacc4c90baf39493803b6, type: 2}
+  - {fileID: 2100000, guid: 8caeb3051d2320f41b16aa247135405d, type: 2}
+  - {fileID: 2100000, guid: 8e9970167900bc84b8c3a11e4b3418f1, type: 2}
+  - {fileID: 2100000, guid: e96aeabfdcf11c94ea005a6a8199abdd, type: 2}
+  - {fileID: 2100000, guid: 94e02e0fe33c3424fad4a00e7c9dc9bb, type: 2}
+  - {fileID: 2100000, guid: b852d8c29185a884b919157f33710d2d, type: 2}
+  - {fileID: 2100000, guid: 239a46b07efc2e342a664c985b2105de, type: 2}
+  - {fileID: 2100000, guid: 8b3718133ffa45748a967f0175b64c35, type: 2}
+  - {fileID: 2100000, guid: bed4f77f88d7fb34fbe1d8ba94a398e9, type: 2}
+  - {fileID: 2100000, guid: e3262d1b7306a99438fb9698750b06da, type: 2}
+  - {fileID: 2100000, guid: 16e7ca187d4806a41ba5a2606b3017bd, type: 2}
+  - {fileID: 2100000, guid: 13d8f830fb3ac7f48bcceea59fb145fa, type: 2}
+  - {fileID: 2100000, guid: fe9a906cc151fa443add0cd811535df0, type: 2}
+  - {fileID: 2100000, guid: 3c99dbb9ec570ac4ba2a38b6726e4e7d, type: 2}
+  - {fileID: 2100000, guid: f3def7f6222f23c4ea8c67021dd66362, type: 2}
+  - {fileID: 2100000, guid: e5f39c20740912b42be65a102bca649c, type: 2}
+  - {fileID: 2100000, guid: 8f767cdc723b7c542847095c483fef0a, type: 2}
+  - {fileID: 2100000, guid: 3e17bff1ac285494c97bc5f23c54fdcf, type: 2}
+  - {fileID: 2100000, guid: f14c8ac3a869ccb48ac8a29d8dfa13ba, type: 2}
+  - {fileID: 2100000, guid: b1b3e77b1a19aef479299891507e8168, type: 2}
+  - {fileID: 2100000, guid: f720a456a221be44599f66aa4a42a42a, type: 2}
+  - {fileID: 2100000, guid: 3d898fece855e794ba28c5139ddb35a3, type: 2}
+  - {fileID: 2100000, guid: 8cb53dad95f779247a63753c14e54c4a, type: 2}
+  - {fileID: 2100000, guid: 07786809c92a05747bb4933773bcfe67, type: 2}
+  - {fileID: 2100000, guid: a09602aa6a972854c976cd7bc6cb8bc3, type: 2}
+  - {fileID: 2100000, guid: 27718b51aa0657244b0a6aa50fc19fbf, type: 2}
+  - {fileID: 2100000, guid: 3137b9689e221064c8cb4827109b1d35, type: 2}
+  playerPrefsKey: P1_Color
 --- !u!114 &5294077024298139669
 MonoBehaviour:
   m_ObjectHideFlags: 0
