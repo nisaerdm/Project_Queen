@@ -5,18 +5,22 @@ using UnityEngine;
 public class AIFailSafeController : MonoBehaviour
 {
     [Header("Fail-Safe Ayarları")]
-    [SerializeField] private float checkInterval = 2f;
-    [SerializeField] private float minimumTravelDistance = 1.5f;
-    [SerializeField] private int maxStuckCount = 3;
+    [Tooltip("Aracın bir sonraki checkpoint'e ulaşması için verilen maksimum süre (saniye). Bu süre aşılırsa araç takılmış/düşmüş sayılır.")]
+    [SerializeField] private float maxTimeWithoutCheckpoint = 12f;
 
     private RespawnController respawnController;
-    private Vector3 lastRecordedPosition;
-    private int currentStuckCount = 0;
+    private MonoBehaviour aiBrain;
+    private CheckpointManager checkpointManager;
+
+    private int lastCheckpointIndex = -1;
+    private float timeWithoutProgress = 0f;
     private Coroutine failSafeRoutine;
 
     private void Awake()
     {
         respawnController = GetComponent<RespawnController>();
+        aiBrain = GetComponent("F1AIBrain") as MonoBehaviour;
+        checkpointManager = Object.FindFirstObjectByType<CheckpointManager>();
     }
 
     private void OnEnable()
@@ -32,8 +36,11 @@ public class AIFailSafeController : MonoBehaviour
 
     public void StartMonitoring()
     {
-        lastRecordedPosition = transform.position;
-        currentStuckCount = 0;
+        if (checkpointManager != null)
+        {
+            lastCheckpointIndex = checkpointManager.GetCarNextCheckpointIndex(transform);
+        }
+        timeWithoutProgress = 0f;
 
         if (failSafeRoutine != null) StopCoroutine(failSafeRoutine);
         failSafeRoutine = StartCoroutine(StuckCheckRoutine());
@@ -52,29 +59,58 @@ public class AIFailSafeController : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(checkInterval);
+            // Performansı korumak için her frame yerine saniyede bir kontrol ediyoruz
+            yield return new WaitForSeconds(1f);
 
-            float distanceTravelled = Vector3.Distance(transform.position, lastRecordedPosition);
+            // Eğer araç zaten ışınlanıyorsa (beyni kapalıysa) süreyi sayma, pas geç
+            if (aiBrain != null && !aiBrain.enabled) continue;
 
-            if (distanceTravelled < minimumTravelDistance)
+            if (checkpointManager == null) continue;
+
+            // Aracın gitmesi gereken sıradaki Checkpoint'i soruyoruz
+            int currentTargetIndex = checkpointManager.GetCarNextCheckpointIndex(transform);
+
+            // Eğer hedef checkpoint değiştiyse (yani başarıyla bir sonrakine geçtiyse) süreyi sıfırla
+            if (currentTargetIndex != lastCheckpointIndex)
             {
-                currentStuckCount++;
-                if (currentStuckCount >= maxStuckCount) ExecuteFailSafe();
+                lastCheckpointIndex = currentTargetIndex;
+                timeWithoutProgress = 0f;
             }
             else
             {
-                currentStuckCount = 0;
-            }
+                // Hedef değişmediyse kronomereyi 1 saniye artır
+                timeWithoutProgress += 1f;
 
-            lastRecordedPosition = transform.position;
+                // Eğer limit aşıldıysa, ameliyat sürecini başlat
+                if (timeWithoutProgress >= maxTimeWithoutCheckpoint)
+                {
+                    StartCoroutine(ExecuteFailSafeSequence());
+                }
+            }
         }
     }
 
-    private void ExecuteFailSafe()
+    private IEnumerator ExecuteFailSafeSequence()
     {
-        Debug.Log($"[AIFailSafe] {gameObject.name} takılı kaldı! AI ışınlanıyor...");
+        Debug.Log($"[AIFailSafe] {gameObject.name} {maxTimeWithoutCheckpoint} saniyedir checkpoint geçemedi (Düşmüş olabilir). Işınlanıyor...");
+
+        // 1. AI beynini geçici olarak uyut
+        if (aiBrain != null) aiBrain.enabled = false;
+
+        // 2. Işınlamayı tetikle
         respawnController.ForceRespawn();
-        currentStuckCount = 0;
-        lastRecordedPosition = transform.position;
+
+        // 3. Işınlanma işleminin ve fiziklerin (isKinematic) tamamlanması için bekle
+        yield return new WaitForSeconds(0.5f);
+
+        // 4. Araç güvenli bir şekilde piste oturduğunda AI beynini tekrar uyandır
+        if (aiBrain != null) aiBrain.enabled = true;
+
+        // 5. Işınlandıktan sonra süreleri ve hedefleri sıfırla ki hemen tekrar ışınlanmasın
+        timeWithoutProgress = 0f;
+        if (checkpointManager != null)
+        {
+            lastCheckpointIndex = checkpointManager.GetCarNextCheckpointIndex(transform);
+        }
     }
 }

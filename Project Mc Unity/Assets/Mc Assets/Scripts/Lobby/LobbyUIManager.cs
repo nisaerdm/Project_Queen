@@ -1,14 +1,19 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Sahne işlemleri için gereken kütüphane
+using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem; // YENİLİK: New Input System Kütüphanesi eklendi
 
 public class LobbyUIManager : MonoBehaviour
 {
-    [Header("Panels")]
+    [Header("Lobby Panels")]
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject playPanel;
     [SerializeField] private GameObject garagePanel;
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject creditsPanel;
+
+    [Header("Game Panels (Lego Modülü)")]
+    [Tooltip("ESC'ye basıldığında açılacak olan Duraklatma (Pause) Menüsü")]
+    [SerializeField] private GameObject pausePanel;
 
     [Header("Scene Names")]
     [Tooltip("Geçiş yapılacak yarış sahnesinin tam adı")]
@@ -16,19 +21,42 @@ public class LobbyUIManager : MonoBehaviour
     [Tooltip("Lobi sahnesinin tam adı")]
     [SerializeField] private string lobbySceneName = "MainMenu";
 
+    private InputAction pauseAction;
+    private bool isPaused = false;
+
+    private void Awake()
+    {
+        // Lego Kuralı: Bu scripti başka projeye aktarsan bile ESC tuşu otomatik tanımlanır.
+        // Dışarıdan Input Action Asset bağlamana gerek kalmaz, kendi içinde bağımsız yaşar.
+        pauseAction = new InputAction("Pause", binding: "<Keyboard>/escape");
+    }
+
     private void OnEnable()
     {
         LobbyEventManager.OnMenuStateChanged += HandleMenuStateChanged;
+
+        // Input dinleyicisini aktifleştir ve ESC'ye basıldığında TogglePause metodunu tetikle
+        pauseAction.Enable();
+        pauseAction.performed += ctx => TogglePause();
     }
 
     private void OnDisable()
     {
         LobbyEventManager.OnMenuStateChanged -= HandleMenuStateChanged;
+
+        // Dinleyiciyi kapat (Hafıza sızıntısını önlemek için optimum yaklaşım)
+        pauseAction.performed -= ctx => TogglePause();
+        pauseAction.Disable();
+    }
+
+    private void Start()
+    {
+        // Oyun başladığında pause panelinin kapalı olduğundan emin ol
+        if (pausePanel) pausePanel.SetActive(false);
     }
 
     private void HandleMenuStateChanged(LobbyEventManager.LobbyState state)
     {
-        // Yarış sahnesinde bu paneller olmayacağı için null kontrolü yapıyoruz
         if (mainMenuPanel) mainMenuPanel.SetActive(false);
         if (playPanel) playPanel.SetActive(false);
         if (garagePanel) garagePanel.SetActive(false);
@@ -65,36 +93,53 @@ public class LobbyUIManager : MonoBehaviour
 
     // --- SAHNE VE OYUN KONTROL BUTONLARI ---
 
-    // 1. Oyunu Başlat (Lobi'deki "Start Match" tarzı butona atanacak)
+    // 1. Oyunu Başlat
     public void OnClick_LoadGameScene()
     {
-        Time.timeScale = 1f; // Zamanın aktığından emin ol
+        Time.timeScale = 1f;
         SceneManager.LoadScene(gameSceneName);
     }
 
-    // 2. Oyunu Durdur (Yarış sahnesindeki Pause butonuna atanacak)
-    public void OnClick_PauseGame()
+    // 2. Duraklatma (Pause) İşlemlerini Yöneten Ana Metod
+    public void TogglePause()
     {
-        Time.timeScale = 0f; // Zamanı dondur (Update, fizik vb. durur)
+        // Sadece yarış sahnesindeysek (veya panel atanmışsa) çalışsın
+        if (pausePanel == null) return;
+
+        isPaused = !isPaused;
+
+        if (isPaused)
+        {
+            pausePanel.SetActive(true);
+            Time.timeScale = 0f; // Zamanı dondur (Fizikler ve Update'ler durur)
+        }
+        else
+        {
+            pausePanel.SetActive(false);
+            Time.timeScale = 1f; // Zamanı normale çevir
+        }
     }
 
-    // 3. Oyuna Devam Et (Yarış sahnesindeki Resume butonuna atanacak)
+    // 3. UI Butonundan Oyuna Devam Etmek İçin (Resume Butonuna Atanacak)
     public void OnClick_ResumeGame()
     {
-        Time.timeScale = 1f; // Zamanı normale çevir
+        if (isPaused)
+        {
+            TogglePause();
+        }
     }
 
-    // 4. Sahneyi Yeniden Başlat (Yarış sahnesindeki Restart butonuna atanacak)
+    // 4. Sahneyi Yeniden Başlat
     public void OnClick_RestartScene()
     {
-        Time.timeScale = 1f; // Sahne donuksa çöz
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); // Mevcut sahneyi baştan yükle
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    // 5. Ana Menüye Dön (Yarış sahnesinden çıkış butonuna atanacak)
+    // 5. Ana Menüye Dön
     public void OnClick_ReturnToLobby()
     {
-        Time.timeScale = 1f; // Sahne donuksa çöz
+        Time.timeScale = 1f;
         SceneManager.LoadScene(lobbySceneName);
     }
 }

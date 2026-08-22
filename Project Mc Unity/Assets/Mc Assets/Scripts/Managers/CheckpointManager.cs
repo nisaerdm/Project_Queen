@@ -27,7 +27,6 @@ public class CheckpointManager : MonoBehaviour
 
     private void Start()
     {
-        // YENİLİK: Lobi'de seçilen tur sayısını cihaza yazılan yerden çekiyoruz
         totalLaps = PlayerPrefs.GetInt("Race_Laps", 1);
 
         foreach (CheckpointSingle cp in checkpointList)
@@ -110,7 +109,13 @@ public class CheckpointManager : MonoBehaviour
         if (!carTrackers.ContainsKey(rootCar)) return checkpointList[0].transform;
 
         int lastIndex = carTrackers[rootCar].nextCheckpointIndex - 1;
-        if (lastIndex < 0) lastIndex = 0;
+
+        // ÇÖZÜM: Eğer son geçilen checkpoint -1'e düşerse (yeni turun başlangıcı)
+        if (lastIndex < 0)
+        {
+            // Araç yarışa yeni başladıysa 0'a, ama bir tur bitirdiyse listenin en sonuna yolla
+            lastIndex = carTrackers[rootCar].currentLap > 0 ? checkpointList.Count - 1 : 0;
+        }
 
         return checkpointList[lastIndex].transform;
     }

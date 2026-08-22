@@ -15,15 +15,19 @@ public class F1AIBrain : MonoBehaviour
     public float maxSpeedRef = 100f;
 
     [Header("AI İnsanlaştırma ve Fizik")]
-    [Tooltip("Yapay zeka gaza maksimum yüzde kaç basabilsin? (Örn: 0.85 = %85. İnsan oyuncuyu dengelemek için)")]
     [Range(0.5f, 1f)] public float maxThrottleLimit = 0.85f;
-
-    [Tooltip("Lerp yerine gerçekçi fiziksel fren gücü (Tekerlek sürtünmesi hissi)")]
+    public float throttleSmoothing = 2.5f;
+    public float brakeSmoothing = 3.5f;
     public float naturalBrakeForce = 2500f;
+
+    [Header("Çarpışma Önleyici Sensör (Anti-Bulldozer)")]
+    [Tooltip("Aracın önündeki görünmez sensörün uzunluğu. Önünde biri varken gaza abanmayı bırakır.")]
+    public float frontSensorLength = 6f;
 
     private ArcadeVehicleController carController;
     private Rigidbody rb;
     private bool isRaceStarted = false;
+    private bool isCoolDownLap = false;
 
     private float currentTurnAI;
     private float currentSpeedAI;
@@ -39,22 +43,23 @@ public class F1AIBrain : MonoBehaviour
     private void OnEnable()
     {
         CountdownManager.OnCountdownFinished += UnlockAIBrain;
-        CheckpointManager.OnRaceFinished += StopAI;
+        CheckpointManager.OnRaceFinished += HandleRaceFinished;
     }
 
     private void OnDisable()
     {
         CountdownManager.OnCountdownFinished -= UnlockAIBrain;
-        CheckpointManager.OnRaceFinished -= StopAI;
+        CheckpointManager.OnRaceFinished -= HandleRaceFinished;
     }
 
     private void UnlockAIBrain() => isRaceStarted = true;
 
-    private void StopAI(Transform finisherCar, bool isPlayer)
+    private void HandleRaceFinished(Transform finisherCar, bool isPlayer)
     {
         if (finisherCar == transform.root)
         {
-            isRaceStarted = false;
+            isCoolDownLap = true;
+            maxThrottleLimit *= 0.5f;
         }
     }
 
@@ -76,30 +81,55 @@ public class F1AIBrain : MonoBehaviour
         float upcomingCornerAngle = Vector3.Angle(currentRoute.direction, upcomingRoute.direction);
         float targetSpeed = Mathf.Lerp(maxSpeedRef, minCornerSpeed, upcomingCornerAngle / 75f);
 
-        // --- GAZ VE FREN KARARI ---
-        if (currentSpeed > targetSpeed + 5f)
+        float desiredGas = 0f;
+        float desiredBrake = 0f;
+
+        // --- YENİLİK: GÖRÜNMEZ SENSÖR (RAYCAST) KONTROLÜ ---
+        bool isBlockedAhead = false;
+
+        // Aracın merkezinden biraz yukarıdan ileriye doğru görünmez bir lazer atıyoruz
+        if (Physics.Raycast(transform.position + (Vector3.up * 0.5f), transform.forward, out RaycastHit hit, frontSensorLength))
         {
-            currentBrakeAI = Mathf.Clamp01((currentSpeed - targetSpeed) / 15f);
-            currentSpeedAI = 0f;
+            // Eğer lazer "Player" veya "Car" etiketli bir şeye çarparsa, önümüz dolu demektir!
+            if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Car"))
+            {
+                isBlockedAhead = true;
+            }
         }
-        else if (currentSpeed < targetSpeed - 5f)
+
+        // --- GAZ/FREN KARARI ---
+        if (isBlockedAhead)
         {
-            currentBrakeAI = 0f;
-            currentSpeedAI = maxThrottleLimit;
+            // ÇÖZÜM: Önünde araba varsa gazı anında kes ve hafif fren yap ki yapışmasın!
+            desiredGas = 0f;
+            desiredBrake = 0.4f;
+        }
+        else if (currentSpeed > targetSpeed)
+        {
+            desiredGas = 0f;
+            desiredBrake = Mathf.Clamp01((currentSpeed - targetSpeed) / 20f);
         }
         else
         {
-            currentBrakeAI = 0f;
-            currentSpeedAI = maxThrottleLimit * 0.4f;
+            desiredBrake = 0f;
+            desiredGas = maxThrottleLimit;
+
+            if (targetSpeed - currentSpeed < 5f)
+            {
+                desiredGas *= 0.5f;
+            }
         }
 
         Vector3 dirToTarget = (progressTracker.target.position - transform.position).normalized;
 
         if (Vector3.Dot(transform.forward, dirToTarget) < -0.5f && currentSpeed < 5f)
         {
-            currentBrakeAI = 1f;
-            currentSpeedAI = -maxThrottleLimit;
+            desiredBrake = 1f;
+            desiredGas = -maxThrottleLimit;
         }
+
+        currentSpeedAI = Mathf.MoveTowards(currentSpeedAI, desiredGas, Time.deltaTime * throttleSmoothing);
+        currentBrakeAI = Mathf.MoveTowards(currentBrakeAI, desiredBrake, Time.deltaTime * brakeSmoothing);
 
         float angleToDir = Vector3.SignedAngle(transform.forward, dirToTarget, Vector3.up);
         float steeringNormalized = Mathf.Clamp(angleToDir / 20f, -1f, 1f);

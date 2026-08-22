@@ -27,6 +27,10 @@ namespace ArcadeVP
         public float gravity = 7f;
         public float downforce = 5f;
 
+        [Header("F1 Direksiyon Asistanı")]
+        [Tooltip("Hız arttıkça direksiyon ne kadar sertleşecek? (1 = Çok Sert, 0 = Arcade/Yumuşak)")]
+        [Range(0f, 1f)] public float highSpeedSteeringStiffness = 0.65f;
+
         [FormerlySerializedAs("AirControl")]
         [Tooltip("if true : can turn vehicle in air")]
         public bool airControl = false;
@@ -114,7 +118,6 @@ namespace ArcadeVP
         {
             engineSound.pitch = Mathf.Lerp(minPitch, maxPitch, Mathf.Abs(carVelocity.z) / maxSpeed);
 
-            // Artık sadece yana kaymayı değil, F1 frenini ve sert AI dönüşlerini de dinliyor
             if (IsTireSkidding())
             {
                 skidSound.mute = false;
@@ -139,7 +142,14 @@ namespace ArcadeVP
             if (grounded())
             {
                 float sign = Mathf.Sign(carVelocity.z);
-                float TurnMultiplyer = turnCurve.Evaluate(carVelocity.magnitude / maxSpeed);
+                float speedFactor = Mathf.Clamp01(carVelocity.magnitude / maxSpeed);
+                float TurnMultiplyer = turnCurve.Evaluate(speedFactor);
+
+                // YENİLİK: F1 Hıza Duyarlı Direksiyon Sistemi (Speed-Sensitive Steering)
+                // Araç hızlandıkça, verdiğin yüksek hız sertliği ayarına göre direksiyon tepkisini kısıyoruz.
+                float dynamicStiffness = Mathf.Lerp(1f, 1f - highSpeedSteeringStiffness, speedFactor);
+                float f1SteeringInput = steeringInput * dynamicStiffness;
+
                 if (kartLike && brakeInput > 0.1f)
                 {
                     TurnMultiplyer *= driftMultiplier;
@@ -147,11 +157,11 @@ namespace ArcadeVP
 
                 if (accelerationInput > 0.1f || carVelocity.z > 1)
                 {
-                    carBody.AddTorque(Vector3.up * steeringInput * sign * turn * 100 * TurnMultiplyer);
+                    carBody.AddTorque(Vector3.up * f1SteeringInput * sign * turn * 100 * TurnMultiplyer);
                 }
                 else if (accelerationInput < -0.1f || carVelocity.z < -1)
                 {
-                    carBody.AddTorque(Vector3.up * steeringInput * sign * turn * 100 * TurnMultiplyer);
+                    carBody.AddTorque(Vector3.up * f1SteeringInput * sign * turn * 100 * TurnMultiplyer);
                 }
 
                 if (!kartLike)
@@ -269,24 +279,14 @@ namespace ArcadeVP
             return isGrounded;
         }
 
-        /// <summary>
-        /// Aracın lastik izi/sesi çıkarıp çıkarmayacağını hesaplayan merkezi Lego parçası.
-        /// </summary>
         public bool IsTireSkidding()
         {
-            // Araç havadaysa iz çıkmaz
             if (!grounded()) return false;
 
-            // 1. Klasik Yana Kayma (Senin klavye hareketlerinle tetiklenen durum)
             bool lateralSlip = Mathf.Abs(carVelocity.x) > driftThreshold;
-
-            // 2. F1 Tekerlek Kilitlemesi (Yüksek hızda sert fren yaparken iz bırakma)
             bool heavyBraking = brakeInput > 0.4f && carVelocity.z > 20f;
-
-            // 3. Yüksek Hızda Keskin Dönüş (AI'ın pürüzsüz ama yüksek G kuvvetli dönüşleri)
             bool sharpTurn = Mathf.Abs(steeringInput) > 0.6f && carVelocity.z > 35f;
 
-            // Üçünden biri bile geçerliyse lastik izi çıksın!
             return lateralSlip || heavyBraking || sharpTurn;
         }
 

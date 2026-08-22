@@ -43,31 +43,46 @@ public class RespawnController : MonoBehaviour
 
         isRespawning = true;
         Transform targetPoint = checkpointManager.GetLastPassedCheckpoint(transform);
-
         Vector3 safePosition = targetPoint.position + (Vector3.up * 1.5f);
 
-        rb.isKinematic = true;
-
-        transform.position = safePosition;
-        transform.rotation = targetPoint.rotation;
-
         ArcadeVP.ArcadeVehicleController carController = GetComponent<ArcadeVP.ArcadeVehicleController>();
+
+        // 1. FİZİĞİ TAMAMEN DURDUR
+        rb.isKinematic = true;
         if (carController != null && carController.carBody != null)
         {
             carController.carBody.isKinematic = true;
-
-            carController.carBody.transform.position = safePosition;
-            carController.carBody.transform.rotation = targetPoint.rotation;
-
-            carController.carBody.isKinematic = false;
-            carController.carBody.linearVelocity = Vector3.zero;
-            carController.carBody.angularVelocity = Vector3.zero;
         }
 
-        rb.isKinematic = false;
+        // Fizik motorunun durduğunu algılaması için 1 fizik karesi bekle
+        yield return new WaitForFixedUpdate();
+
+        // 2. ARACI GÜVENLİ KONUMA TAŞI
+        transform.position = safePosition;
+        transform.rotation = targetPoint.rotation;
+
+        if (carController != null && carController.carBody != null)
+        {
+            carController.carBody.transform.position = safePosition;
+            carController.carBody.transform.rotation = targetPoint.rotation;
+        }
+
+        // Fizik motorunun yeni konumu haritaya işlemesi için 1 kare daha bekle
+        yield return new WaitForFixedUpdate();
+
+        // 3. İVMEYİ SIFIRLA VE FİZİĞİ SERBEST BIRAK
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+        rb.isKinematic = false;
 
+        if (carController != null && carController.carBody != null)
+        {
+            carController.carBody.linearVelocity = Vector3.zero;
+            carController.carBody.angularVelocity = Vector3.zero;
+            carController.carBody.isKinematic = false;
+        }
+
+        // Ghost efektini başlat
         yield return StartCoroutine(GhostEffectRoutine());
 
         isRespawning = false;

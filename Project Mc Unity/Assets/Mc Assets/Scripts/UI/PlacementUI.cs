@@ -7,7 +7,7 @@ public class PlacementUI : MonoBehaviour
     [Header("UI Referansları")]
     [SerializeField] private TextMeshProUGUI placementText;
 
-    private Transform playerCar;
+    private Transform playerCarRoot;
 
     private void OnEnable()
     {
@@ -21,24 +21,24 @@ public class PlacementUI : MonoBehaviour
 
     private void UpdatePlacementUI(List<Transform> currentStandings)
     {
-        // 1. Oyuncu aracı henüz bulunamadıysa (veya sonradan spawn olduysa) bulmayı dene
-        if (playerCar == null)
+        // 1. Oyuncu aracı henüz bulunamadıysa bulmayı dene
+        if (playerCarRoot == null)
         {
-            // Araç veya bileşen geçici olarak inaktif (kapalı) olsa bile bulur
             F1PlayerInput playerInput = UnityEngine.Object.FindFirstObjectByType<F1PlayerInput>(FindObjectsInactive.Include);
 
             if (playerInput != null)
             {
-                playerCar = playerInput.transform;
+                // ÇÖZÜM: Listenin içindekiyle eşleşmesi için transform.root'u alıyoruz
+                playerCarRoot = playerInput.transform.root;
             }
             else
             {
-                return; // Hala yoksa sessizce bekle, bir sonraki sefere tekrar dener.
+                return;
             }
         }
 
         // 2. Sıralamayı Hesapla
-        int playerRank = currentStandings.IndexOf(playerCar) + 1;
+        int playerRank = currentStandings.IndexOf(playerCarRoot) + 1;
 
         if (playerRank > 0)
         {

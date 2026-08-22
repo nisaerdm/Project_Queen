@@ -16,7 +16,6 @@ public class F1PlayerInput : MonoBehaviour
     [Header("Gaz Yumuşatma (Throttle Damping)")]
     [Tooltip("Motorun %0'dan %100 güce ulaşma süresi (Düşük = Daha yavaş hızlanma, Yüksek = Agresif hızlanma)")]
     [SerializeField] private float throttleSpeed = 1.5f;
-
     private float smoothedGas = 0f;
 
     [Header("Mobil Kontrol Ayarları")]
@@ -24,8 +23,8 @@ public class F1PlayerInput : MonoBehaviour
     public bool autoAcceleration = true;
 
     [Header("Akıllı Fren Ayarları")]
-    [Tooltip("S tuşuna basıldığında aracı yavaşlatacak fiziksel fren kuvveti")]
-    [SerializeField] private float brakeForce = 15f;
+    [Tooltip("S tuşuna basıldığında aracı saniyede kaç birim yavaşlatacak?")]
+    [SerializeField] private float brakeForce = 35f;
 
     private void Awake()
     {
@@ -33,7 +32,6 @@ public class F1PlayerInput : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    // --- EVENT ABONELİKLERİ ---
     private void OnEnable()
     {
         CheckpointManager.OnRaceFinished += HandleRaceFinished;
@@ -53,7 +51,6 @@ public class F1PlayerInput : MonoBehaviour
             brakeInput = 0f;
         }
     }
-    // ----------------------------------------
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -73,16 +70,21 @@ public class F1PlayerInput : MonoBehaviour
 
         float forwardSpeed = carController.carVelocity.z;
 
-        if (isFinished && forwardSpeed > 1f)
+        // Bitiş çizgisini geçince yavaşlama
+        if (isFinished && forwardSpeed > 0.5f)
         {
-            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, brakeForce * Time.fixedDeltaTime);
+            rb.linearVelocity = Vector3.MoveTowards(rb.linearVelocity, Vector3.zero, brakeForce * Time.fixedDeltaTime);
             return;
         }
 
         bool isBraking = brakeInput > 0.1f || moveInput.y < -0.1f;
-        if (isBraking && forwardSpeed > 1f)
+
+        // ÇÖZÜM: Araba sadece ileri gidiyorsa fren uygulanacak. Geri gitme iptal!
+        if (isBraking && forwardSpeed > 0.1f)
         {
-            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, brakeForce * Time.fixedDeltaTime);
+            Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+            localVel.z = Mathf.MoveTowards(localVel.z, 0, brakeForce * Time.fixedDeltaTime);
+            rb.linearVelocity = transform.TransformDirection(localVel);
         }
     }
 
@@ -96,9 +98,7 @@ public class F1PlayerInput : MonoBehaviour
                 return;
             }
 
-            float forwardSpeed = carController.carVelocity.z;
             float currentSteer = moveInput.x;
-
             float targetGas = autoAcceleration ? 1f : Mathf.Clamp01(moveInput.y);
 
             smoothedGas = Mathf.MoveTowards(smoothedGas, targetGas, Time.deltaTime * throttleSpeed);
@@ -110,17 +110,11 @@ public class F1PlayerInput : MonoBehaviour
 
             if (isBraking)
             {
-                if (forwardSpeed > 1f)
-                {
-                    currentGas = 0f;
-                    currentBrake = 1f;
-                }
-                else
-                {
-                    currentGas = -1f;
-                    currentBrake = 0f;
-                }
+                // ÇÖZÜM: Frene basıldığında her koşulda gaz 0, fren 1. (-1 atanıp geri gitme kodu tamamen silindi)
+                currentGas = 0f;
+                currentBrake = 1f;
             }
+
             carController.ProvideInputs(currentSteer, currentGas, currentBrake);
         }
     }

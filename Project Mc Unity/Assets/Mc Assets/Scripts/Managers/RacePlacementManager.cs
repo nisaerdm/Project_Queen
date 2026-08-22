@@ -16,20 +16,33 @@ public class RacePlacementManager : MonoBehaviour
     private List<Transform> activeCars = new List<Transform>();
     private Coroutine placementRoutine;
 
-    private void Start()
+    private void Awake()
     {
         checkpointManager = UnityEngine.Object.FindFirstObjectByType<CheckpointManager>();
-        GameObject[] cars = GameObject.FindGameObjectsWithTag("Car");
-        foreach (var car in cars)
+    }
+
+    private void OnEnable()
+    {
+        GridSpawnManager.OnVehiclesSpawned += InitializeCars;
+    }
+
+    private void OnDisable()
+    {
+        GridSpawnManager.OnVehiclesSpawned -= InitializeCars;
+    }
+
+    private void InitializeCars(List<GameObject> spawnedVehicles)
+    {
+        activeCars.Clear();
+        foreach (var vehicle in spawnedVehicles)
         {
-            activeCars.Add(car.transform);
-            checkpointManager.RegisterCar(car.transform);
+            Transform rootCar = vehicle.transform.root;
+            activeCars.Add(rootCar);
+            checkpointManager.RegisterCar(rootCar);
         }
 
-        if (placementRoutine == null)
-        {
-            placementRoutine = StartCoroutine(CalculatePlacementRoutine());
-        }
+        if (placementRoutine != null) StopCoroutine(placementRoutine);
+        placementRoutine = StartCoroutine(CalculatePlacementRoutine());
     }
 
     private IEnumerator CalculatePlacementRoutine()
@@ -37,32 +50,24 @@ public class RacePlacementManager : MonoBehaviour
         WaitForSeconds wait = new WaitForSeconds(calculationRate);
         while (true)
         {
-            SortCars();
-            OnPlacementUpdated?.Invoke(activeCars);
+            if (activeCars.Count > 0)
+            {
+                SortCars();
+                OnPlacementUpdated?.Invoke(activeCars);
+            }
             yield return wait;
         }
     }
 
     private void SortCars()
     {
-        List<GameObject> allVehiclesInScene = new List<GameObject>();
-        allVehiclesInScene.AddRange(GameObject.FindGameObjectsWithTag("Player"));
-        allVehiclesInScene.AddRange(GameObject.FindGameObjectsWithTag("Car"));
-
-        if (activeCars.Count != allVehiclesInScene.Count)
-        {
-            activeCars.Clear();
-            foreach (var vehicle in allVehiclesInScene)
-            {
-                Transform rootCar = vehicle.transform.root;
-                activeCars.Add(rootCar);
-                checkpointManager.RegisterCar(rootCar);
-            }
-        }
-
-        if (activeCars.Count == 0) return;
+        // ÇÖZÜM: Son viraj hatasını önlemek için Checkpoint 0'ı (Bitiş çizgisi) en yüksek değer (9999) olarak algılatıyoruz.
         activeCars = activeCars.OrderByDescending(car => checkpointManager.GetCarLap(car))
-                               .ThenByDescending(car => checkpointManager.GetCarNextCheckpointIndex(car))
+                               .ThenByDescending(car =>
+                               {
+                                   int nextCp = checkpointManager.GetCarNextCheckpointIndex(car);
+                                   return nextCp == 0 ? 9999 : nextCp;
+                               })
                                .ThenBy(car => Vector3.Distance(car.position, checkpointManager.GetNextCheckpoint(car).position))
                                .ToList();
     }
