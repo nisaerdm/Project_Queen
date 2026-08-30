@@ -45,10 +45,8 @@ public class CarColorModifier : MonoBehaviour
 
         if (selectedSkin == null) return;
 
-        // SENİN MANTIĞIN: Kontrol bloğu devreye giriyor
         if (!selectedSkin.isCustomDesign)
         {
-            // TİK KAPALIYSA: Bütün parçalara tek renk bas (Performans Dostu)
             foreach (Renderer partRenderer in bodyRenderers)
             {
                 if (partRenderer != null && selectedSkin.normalMaterial != null)
@@ -59,10 +57,8 @@ public class CarColorModifier : MonoBehaviour
         }
         else
         {
-            // TİK AÇIKSA: Her parçaya sırasıyla özel materyalleri giydir
             for (int i = 0; i < bodyRenderers.Length; i++)
             {
-                // Dizi sınırlarını aşmamak için güvenlik kontrolü (Fail-Safe)
                 if (i < selectedSkin.customPartMaterials.Length && bodyRenderers[i] != null && selectedSkin.customPartMaterials[i] != null)
                 {
                     bodyRenderers[i].material = selectedSkin.customPartMaterials[i];

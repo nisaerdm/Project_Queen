@@ -40,14 +40,12 @@ namespace ArcadeVP
         [HideInInspector]
         public float skidWidth;
 
-
         private float radius;
         private Vector3 origin;
+        private bool isGrounded; // OPTİMİZASYON: Her frame hesaplamak yerine saklıyoruz
 
-        //ai
         public Transform target;
 
-        //Ai stuff
         [HideInInspector]
         public float TurnAI = 1f;
         [HideInInspector]
@@ -58,8 +56,6 @@ namespace ArcadeVP
 
         private float desiredTurning;
 
-
-
         private void Start()
         {
             radius = rb.GetComponent<SphereCollider>().radius;
@@ -68,149 +64,82 @@ namespace ArcadeVP
                 Physics.defaultMaxAngularSpeed = 100;
             }
         }
+
         private void Update()
         {
             Visuals();
             AudioManager();
-
-            //
-            // the new method of calculating turn value
-            Vector3 aimedPoint = target.position;
-            aimedPoint.y = transform.position.y;
-            Vector3 aimedDir = (aimedPoint - transform.position).normalized;
-            Vector3 myDir = transform.forward;
-            myDir.Normalize();
-            desiredTurning = Mathf.Abs(Vector3.Angle(myDir, Vector3.ProjectOnPlane(aimedDir, transform.up)));
-            //
-
-            float reachedTargetDistance = 1f;
-            float distanceToTarget = Vector3.Distance(transform.position, target.position);
-            Vector3 dirToMovePosition = (target.position - transform.position).normalized;
-            float dot = Vector3.Dot(transform.forward, dirToMovePosition);
-            float angleToMove = Vector3.Angle(transform.forward, dirToMovePosition);
-            if (angleToMove > brakeAngle)
-            {
-                if (carVelocity.z > 15)
-                {
-                    brakeAI = 1;
-                }
-                else
-                {
-                    brakeAI = 0;
-                }
-
-            }
-            else { brakeAI = 0; }
-
-            if (distanceToTarget > reachedTargetDistance)
-            {
-
-                if (dot > 0)
-                {
-                    SpeedAI = 1f;
-
-                    float stoppingDistance = 5f;
-                    if (distanceToTarget < stoppingDistance)
-                    {
-                        brakeAI = 1f;
-                    }
-                    else
-                    {
-                        brakeAI = 0f;
-                    }
-                }
-                else
-                {
-                    float reverseDistance = 5f;
-                    if (distanceToTarget > reverseDistance)
-                    {
-                        SpeedAI = 1f;
-                    }
-                    else
-                    {
-                        brakeAI = -1f;
-                    }
-                }
-
-                float angleToDir = Vector3.SignedAngle(transform.forward, dirToMovePosition, Vector3.up);
-
-                if (angleToDir > 0)
-                {
-                    TurnAI = 1f * turnCurve.Evaluate(desiredTurning / 90);
-                }
-                else
-                {
-                    TurnAI = -1f * turnCurve.Evaluate(desiredTurning / 90);
-                }
-
-            }
-            else
-            {
-                if (carVelocity.z > 1f)
-                {
-                    brakeAI = -1f;
-                }
-                else
-                {
-                    brakeAI = 0f;
-                }
-                TurnAI = 0f;
-            }
-
-
-        }
-        public void AudioManager()
-        {
-            engineSound.pitch = Mathf.Lerp(minPitch, MaxPitch, Mathf.Abs(carVelocity.z) / MaxSpeed);
-            if (Mathf.Abs(carVelocity.x) > 10 && grounded())
-            {
-                SkidSound.mute = false;
-            }
-            else
-            {
-                SkidSound.mute = true;
-            }
         }
 
-
-
-
-        void FixedUpdate()
+        private void FixedUpdate()
         {
+            // OPTİMİZASYON: Ağır zemin kontrolünü Update yerine burada, seyrek yapıyoruz.
+            UpdateGroundedState();
+
             carVelocity = carBody.transform.InverseTransformDirection(carBody.linearVelocity);
 
             if (Mathf.Abs(carVelocity.x) > 0)
             {
-                //changes friction according to sideways speed of car
                 frictionMaterial.dynamicFriction = frictionCurve.Evaluate(Mathf.Abs(carVelocity.x / 100));
             }
 
-
-            if (grounded())
+            // --- AI HEDEF HESAPLAMA (Gereksiz değişkenler ve atamalar temizlendi) ---
+            if (target != null)
             {
-                //turnlogic
-                float sign = Mathf.Sign(carVelocity.z);
-                float TurnMultiplyer = turnCurve.Evaluate(carVelocity.magnitude / MaxSpeed);
-                if (SpeedAI > 0.1f || carVelocity.z > 1)
-                {
-                    carBody.AddTorque(Vector3.up * TurnAI * sign * turn * 100 * TurnMultiplyer);
-                }
-                else if (SpeedAI < -0.1f || carVelocity.z < -1)
-                {
-                    carBody.AddTorque(Vector3.up * TurnAI * sign * turn * 100 * TurnMultiplyer);
-                }
+                Vector3 aimedPoint = target.position;
+                aimedPoint.y = transform.position.y;
+                Vector3 aimedDir = (aimedPoint - transform.position).normalized;
+                Vector3 myDir = transform.forward;
+                desiredTurning = Mathf.Abs(Vector3.Angle(myDir, Vector3.ProjectOnPlane(aimedDir, transform.up)));
 
-                //brakelogic
-                if (brakeAI > 0.1f)
+                float distanceToTarget = Vector3.Distance(transform.position, target.position);
+                Vector3 dirToMovePosition = (target.position - transform.position).normalized;
+                float dot = Vector3.Dot(transform.forward, dirToMovePosition);
+                float angleToMove = Vector3.Angle(transform.forward, dirToMovePosition);
+
+                brakeAI = (angleToMove > brakeAngle && carVelocity.z > 15) ? 1f : 0f;
+
+                if (distanceToTarget > 1f)
                 {
-                    rb.constraints = RigidbodyConstraints.FreezeRotationX;
+                    if (dot > 0)
+                    {
+                        SpeedAI = 1f;
+                        brakeAI = (distanceToTarget < 5f) ? 1f : 0f;
+                    }
+                    else
+                    {
+                        if (distanceToTarget > 5f)
+                        {
+                            SpeedAI = 1f;
+                        }
+                        else
+                        {
+                            brakeAI = -1f;
+                        }
+                    }
+
+                    float angleToDir = Vector3.SignedAngle(transform.forward, dirToMovePosition, Vector3.up);
+                    TurnAI = (angleToDir > 0 ? 1f : -1f) * turnCurve.Evaluate(desiredTurning / 90);
                 }
                 else
                 {
-                    rb.constraints = RigidbodyConstraints.None;
+                    brakeAI = (carVelocity.z > 1f) ? -1f : 0f;
+                    TurnAI = 0f;
+                }
+            }
+
+            // --- FİZİK HAREKETİ ---
+            if (isGrounded)
+            {
+                float sign = Mathf.Sign(carVelocity.z);
+                float TurnMultiplyer = turnCurve.Evaluate(carVelocity.magnitude / MaxSpeed);
+
+                if (Mathf.Abs(SpeedAI) > 0.1f || Mathf.Abs(carVelocity.z) > 1)
+                {
+                    carBody.AddTorque(Vector3.up * TurnAI * sign * turn * 100 * TurnMultiplyer);
                 }
 
-                //accelaration logic
+                rb.constraints = (brakeAI > 0.1f) ? RigidbodyConstraints.FreezeRotationX : RigidbodyConstraints.None;
 
                 if (movementMode == MovementMode.AngularVelocity)
                 {
@@ -227,28 +156,38 @@ namespace ArcadeVP
                     }
                 }
 
-                //body tilt
                 carBody.MoveRotation(Quaternion.Slerp(carBody.rotation, Quaternion.FromToRotation(carBody.transform.up, hit.normal) * carBody.transform.rotation, 0.12f));
             }
             else
             {
                 carBody.MoveRotation(Quaternion.Slerp(carBody.rotation, Quaternion.FromToRotation(carBody.transform.up, Vector3.up) * carBody.transform.rotation, 0.02f));
             }
-
         }
+
+        public void AudioManager()
+        {
+            if (engineSound != null)
+                engineSound.pitch = Mathf.Lerp(minPitch, MaxPitch, Mathf.Abs(carVelocity.z) / MaxSpeed);
+
+            if (SkidSound != null)
+                SkidSound.mute = !(Mathf.Abs(carVelocity.x) > 10 && isGrounded);
+        }
+
         public void Visuals()
         {
-            //tires
             foreach (Transform FW in FrontWheels)
             {
-                FW.localRotation = Quaternion.Slerp(FW.localRotation, Quaternion.Euler(FW.localRotation.eulerAngles.x,
-                                   30 * TurnAI, FW.localRotation.eulerAngles.z), 0.1f);
-                FW.GetChild(0).localRotation = rb.transform.localRotation;
+                if (FW != null)
+                {
+                    FW.localRotation = Quaternion.Slerp(FW.localRotation, Quaternion.Euler(FW.localRotation.eulerAngles.x,
+                                       30 * TurnAI, FW.localRotation.eulerAngles.z), 0.1f);
+                    if (FW.childCount > 0)
+                        FW.GetChild(0).localRotation = rb.transform.localRotation;
+                }
             }
-            RearWheels[0].localRotation = rb.transform.localRotation;
-            RearWheels[1].localRotation = rb.transform.localRotation;
+            if (RearWheels[0] != null) RearWheels[0].localRotation = rb.transform.localRotation;
+            if (RearWheels[1] != null) RearWheels[1].localRotation = rb.transform.localRotation;
 
-            //Body
             if (carVelocity.z > 1)
             {
                 BodyMesh.localRotation = Quaternion.Slerp(BodyMesh.localRotation, Quaternion.Euler(Mathf.Lerp(0, -5, carVelocity.z / MaxSpeed),
@@ -258,60 +197,39 @@ namespace ArcadeVP
             {
                 BodyMesh.localRotation = Quaternion.Slerp(BodyMesh.localRotation, Quaternion.Euler(0, 0, 0), 0.05f);
             }
-
-
         }
 
-        public bool grounded() //checks for if vehicle is grounded or not
+        private void UpdateGroundedState()
         {
-            origin = rb.position + rb.GetComponent<SphereCollider>().radius * Vector3.up;
-            var direction = -transform.up;
-            var maxdistance = rb.GetComponent<SphereCollider>().radius + 0.2f;
+            origin = rb.position + radius * Vector3.up;
+            Vector3 direction = -transform.up;
+            float maxdistance = radius + 0.2f;
 
             if (GroundCheck == groundCheck.rayCast)
-            {
-                if (Physics.Raycast(rb.position, Vector3.down, out hit, maxdistance, drivableSurface))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
+                isGrounded = Physics.Raycast(rb.position, Vector3.down, out hit, maxdistance, drivableSurface);
             else if (GroundCheck == groundCheck.sphereCaste)
-            {
-                if (Physics.SphereCast(origin, radius + 0.1f, direction, out hit, maxdistance, drivableSurface))
-                {
-                    return true;
-
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else { return false; }
+                isGrounded = Physics.SphereCast(origin, radius + 0.1f, direction, out hit, maxdistance, drivableSurface);
+            else
+                isGrounded = false;
         }
+
+        // Dışarıdan anlık zemin bilgisi istenirse bunu kullanabiliriz
+        public bool grounded() { return isGrounded; }
 
         private void OnDrawGizmos()
         {
-            //debug gizmos
+            if (rb == null || Application.isPlaying) return;
             radius = rb.GetComponent<SphereCollider>().radius;
             float width = 0.02f;
-            if (!Application.isPlaying)
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(rb.transform.position + ((radius + width) * Vector3.down), new Vector3(2 * radius, 2 * width, 4 * radius));
+
+            BoxCollider box = GetComponent<BoxCollider>();
+            if (box != null)
             {
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawWireCube(rb.transform.position + ((radius + width) * Vector3.down), new Vector3(2 * radius, 2 * width, 4 * radius));
-                if (GetComponent<BoxCollider>())
-                {
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawWireCube(transform.position, GetComponent<BoxCollider>().size);
-                }
-
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireCube(transform.position, box.size);
             }
-
         }
     }
 }

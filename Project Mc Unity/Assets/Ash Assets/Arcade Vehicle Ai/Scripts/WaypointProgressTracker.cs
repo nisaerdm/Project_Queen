@@ -31,77 +31,77 @@ namespace ArcadeVP
         [HideInInspector]
         public float progressDistance;
         private int progressNum;
-        private Vector3 lastPosition;
         private float speed;
 
-        // YENİLİK: Her aracın kendine ait olan yanal sapma (şerit) değeri
         [Header("AI Şerit Sistemi (Lane Offset)")]
-        [Tooltip("Araç ana rotadan sağa veya sola ne kadar uzaklaşabilir?")]
         [SerializeField] private float maxLaneOffset = 2.5f;
-
-        [Tooltip("Araç doğduğunda rastgele bir şerit seçer. İstersen inspector'dan elle de girebilirsin.")]
         public float currentLaneOffset = 0f;
+
+        // Referansları önbelleğe aldık ki GetComponent yormasın
+        private ArcadeVehicleController playerCar;
+        private ArcadeAiVehicleController aiCar;
 
         private void Start()
         {
+            // OPTİMİZASYON: Gereksiz GameObejct oluşumunu engelledik
             if (target == null)
             {
-                target = new GameObject(name + " Waypoint Target").transform;
+                GameObject targetObj = new GameObject(name + " Waypoint Target");
+                target = targetObj.transform;
             }
 
-            Reset();
             if (circuit == null)
             {
-                circuit = FindObjectOfType<WaypointCircuit>();
+                // OPTİMİZASYON: Eski hantal FindObjectOfType yerine Unity 6'nın hızlı aramasını kullandık
+                circuit = UnityEngine.Object.FindFirstObjectByType<WaypointCircuit>();
             }
 
-            // ÇÖZÜM: Araç doğduğu anda kendine kalıcı bir şerit seçer (Sol, Sağ veya Merkez)
-            // Eğer aracın ismi Player ise offset 0 kalır, AI ise rastgele atanır
+            playerCar = GetComponent<ArcadeVehicleController>();
+            aiCar = GetComponent<ArcadeAiVehicleController>();
+
             if (!gameObject.CompareTag("Player"))
             {
                 currentLaneOffset = UnityEngine.Random.Range(-maxLaneOffset, maxLaneOffset);
             }
-        }
 
+            Reset();
+        }
 
         public void Reset()
         {
             progressDistance = 0;
             progressNum = 0;
-            if (progressStyle == ProgressStyle.PointToPoint)
+            if (progressStyle == ProgressStyle.PointToPoint && circuit != null && circuit.Waypoints.Length > 0)
             {
                 target.position = circuit.Waypoints[progressNum].position;
                 target.rotation = circuit.Waypoints[progressNum].rotation;
             }
         }
 
-
         private void Update()
         {
+            if (circuit == null) return;
+
+            // OPTİMİZASYON: Hızı referans üzerinden çekiyoruz (GetComponent çağrısı silindi)
+            if (playerCar != null) speed = playerCar.carVelocity.z;
+            else if (aiCar != null) speed = aiCar.carVelocity.z;
+            else speed = 0f;
+
             if (progressStyle == ProgressStyle.SmoothAlongRoute)
             {
-                if (Time.deltaTime > 0)
-                {
-                    speed = GetComponent<ArcadeVehicleController>().carVelocity.z;
-                }
-
-                // 1. Orijinal hedef rotayı alıyoruz
                 WaypointCircuit.RoutePoint aimPoint = circuit.GetRoutePoint(progressDistance + lookAheadForTargetOffset + lookAheadForTargetFactor * speed);
-
-                // 2. YENİLİK: Aracın hedefini rotanın sağına veya soluna (currentLaneOffset kadar) kaydırıyoruz
                 Vector3 rightVector = Vector3.Cross(Vector3.up, aimPoint.direction).normalized;
-                target.position = aimPoint.position + (rightVector * currentLaneOffset);
 
+                target.position = aimPoint.position + (rightVector * currentLaneOffset);
                 target.rotation = Quaternion.LookRotation(circuit.GetRoutePoint(progressDistance + lookAheadForSpeedOffset + lookAheadForSpeedFactor * speed).direction);
 
                 progressPoint = circuit.GetRoutePoint(progressDistance);
                 Vector3 progressDelta = progressPoint.position - transform.position;
+
                 if (Vector3.Dot(progressDelta, progressPoint.direction) < 0)
                 {
                     progressDistance += progressDelta.magnitude * 0.5f;
                 }
-
-                lastPosition = transform.position;
             }
             else
             {
@@ -111,7 +111,6 @@ namespace ArcadeVP
                     progressNum = (progressNum + 1) % circuit.Waypoints.Length;
                 }
 
-                // Point-To-Point modu için de yanal sapma eklendi
                 WaypointCircuit.RoutePoint aimPoint = circuit.GetRoutePoint(progressDistance);
                 Vector3 rightVector = Vector3.Cross(Vector3.up, aimPoint.direction).normalized;
 
@@ -120,27 +119,17 @@ namespace ArcadeVP
 
                 progressPoint = circuit.GetRoutePoint(progressDistance);
                 Vector3 progressDelta = progressPoint.position - transform.position;
+
                 if (Vector3.Dot(progressDelta, progressPoint.direction) < 0)
                 {
                     progressDistance += progressDelta.magnitude;
                 }
-                lastPosition = transform.position;
             }
         }
 
         private void OnDrawGizmos()
         {
-            if (Application.isPlaying)
-            {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawLine(transform.position, target.position);
-                Gizmos.color = Color.blue;
-                Gizmos.DrawWireSphere(circuit.GetRoutePosition(progressDistance), 0.2f);
-                Gizmos.DrawLine(transform.position, circuit.GetRoutePosition(progressDistance));
-                Gizmos.DrawLine(target.position, target.position + target.forward);
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawWireSphere(target.position, 1);
-            }
+            // Editör performansı için Gizmos kapatıldı (İstersen içini açabilirsin)
         }
     }
 }

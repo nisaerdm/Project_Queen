@@ -61,7 +61,6 @@ public class RacePlacementManager : MonoBehaviour
 
     private void SortCars()
     {
-        // ÇÖZÜM: Son viraj hatasını önlemek için Checkpoint 0'ı (Bitiş çizgisi) en yüksek değer (9999) olarak algılatıyoruz.
         activeCars = activeCars.OrderByDescending(car => checkpointManager.GetCarLap(car))
                                .ThenByDescending(car =>
                                {

@@ -6,7 +6,7 @@ public class TimerUI : MonoBehaviour
 {
     [Tooltip("Sahnedeki RaceTimer (Beyin) objesini buraya sürükle")]
     [SerializeField] private RaceTimer raceTimer;
-    
+
     private TextMeshProUGUI timeText;
 
     private void Awake()
@@ -16,8 +16,7 @@ public class TimerUI : MonoBehaviour
 
     private void Update()
     {
-        // Sadece yarış devam ediyorsa UI güncellenir.
-        if (raceTimer != null && raceTimer.IsRunning)
+        if (raceTimer != null && raceTimer.IsRunning && timeText != null)
         {
             DisplayTime(raceTimer.CurrentTime);
         }
@@ -25,12 +24,12 @@ public class TimerUI : MonoBehaviour
 
     private void DisplayTime(float timeInSeconds)
     {
-        // Sektör standardı optimum zaman ayrıştırması
         int minutes = Mathf.FloorToInt(timeInSeconds / 60F);
         int seconds = Mathf.FloorToInt(timeInSeconds % 60F);
         int milliseconds = Mathf.FloorToInt((timeInSeconds * 1000F) % 1000F);
 
-        // String.Format, arka arkaya " " + " " yapmaktan (String allocation) çok daha performanslıdır.
-        timeText.text = string.Format("{0:00}:{1:00}.{2:000}", minutes, seconds, milliseconds);
+        // OPTİMİZASYON: string.Format bile mobilde saniyede 60 kez çağrılırsa çöp(GC) yaratır.
+        // TMP'nin SetText'i, string oluşturmadan sayıyı doğrudan ekrana gömer. 0 çöp üretir!
+        timeText.SetText("{0:00}:{1:00}.{2:000}", minutes, seconds, milliseconds);
     }
 }

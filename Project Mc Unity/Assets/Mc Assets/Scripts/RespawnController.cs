@@ -37,7 +37,7 @@ public class RespawnController : MonoBehaviour
     {
         if (checkpointManager == null || checkpointManager.GetLastPassedCheckpoint(transform) == null)
         {
-            Debug.LogError("[RespawnController] Checkpoint veya Manager bulunamadı!");
+            // Debug.LogError("[RespawnController] Checkpoint veya Manager bulunamadı!");
             yield break;
         }
 
@@ -47,17 +47,14 @@ public class RespawnController : MonoBehaviour
 
         ArcadeVP.ArcadeVehicleController carController = GetComponent<ArcadeVP.ArcadeVehicleController>();
 
-        // 1. FİZİĞİ TAMAMEN DURDUR
         rb.isKinematic = true;
         if (carController != null && carController.carBody != null)
         {
             carController.carBody.isKinematic = true;
         }
 
-        // Fizik motorunun durduğunu algılaması için 1 fizik karesi bekle
         yield return new WaitForFixedUpdate();
 
-        // 2. ARACI GÜVENLİ KONUMA TAŞI
         transform.position = safePosition;
         transform.rotation = targetPoint.rotation;
 
@@ -67,10 +64,8 @@ public class RespawnController : MonoBehaviour
             carController.carBody.transform.rotation = targetPoint.rotation;
         }
 
-        // Fizik motorunun yeni konumu haritaya işlemesi için 1 kare daha bekle
         yield return new WaitForFixedUpdate();
 
-        // 3. İVMEYİ SIFIRLA VE FİZİĞİ SERBEST BIRAK
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.isKinematic = false;
@@ -82,7 +77,6 @@ public class RespawnController : MonoBehaviour
             carController.carBody.isKinematic = false;
         }
 
-        // Ghost efektini başlat
         yield return StartCoroutine(GhostEffectRoutine());
 
         isRespawning = false;
@@ -107,12 +101,22 @@ public class RespawnController : MonoBehaviour
         while (timer < ghostDuration)
         {
             isVisible = !isVisible;
-            foreach (Renderer r in allRenderers) r.enabled = isVisible;
+
+            // OPTİMİZASYON KORUMASI: Araba parçalandıysa veya silindiyse hata verme
+            foreach (Renderer r in allRenderers)
+            {
+                if (r != null) r.enabled = isVisible;
+            }
+
             yield return new WaitForSeconds(blinkRate);
             timer += blinkRate;
         }
 
-        foreach (Renderer r in allRenderers) r.enabled = true;
+        foreach (Renderer r in allRenderers)
+        {
+            if (r != null) r.enabled = true;
+        }
+
         gameObject.layer = originalLayer;
     }
 }

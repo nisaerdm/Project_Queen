@@ -41,7 +41,7 @@ public class CountdownManager : MonoBehaviour
             count--;
         }
 
-        countdownText.text = "BAŞLA!";
+        countdownText.text = "START!";
 
         // Geri sayım bittiği an bütün ışıkları aynı anda yeşile (Go!) çevir
         SetAllLightsMaterial(greenLightMaterial);

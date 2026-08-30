@@ -37,11 +37,11 @@ public class WheelModifier : MonoBehaviour
         if (testWheelMesh != null && testWheelMaterial != null)
         {
             ApplyWheel(testWheelMesh, testWheelMaterial);
-            Debug.Log("[Jant Değişti] Test tekerleği başarıyla araca takıldı!");
+            // Debug.Log("[Jant Değişti] Test tekerleği başarıyla araca takıldı!");
         }
         else
         {
-            Debug.LogWarning("Uyarı: Test için Mesh veya Material boş bırakılmış!");
+            // Debug.LogWarning("Uyarı: Test için Mesh veya Material boş bırakılmış!");
         }
     }
 }

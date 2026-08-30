@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using ArcadeVP;
 
@@ -21,17 +22,18 @@ public class F1AIBrain : MonoBehaviour
     public float naturalBrakeForce = 2500f;
 
     [Header("Çarpışma Önleyici Sensör (Anti-Bulldozer)")]
-    [Tooltip("Aracın önündeki görünmez sensörün uzunluğu. Önünde biri varken gaza abanmayı bırakır.")]
     public float frontSensorLength = 6f;
 
     private ArcadeVehicleController carController;
     private Rigidbody rb;
     private bool isRaceStarted = false;
-    private bool isCoolDownLap = false;
 
     private float currentTurnAI;
     private float currentSpeedAI;
     private float currentBrakeAI;
+
+    // Optimizasyon: Lazer kontrol sonucu
+    private bool isBlockedAhead = false;
 
     private void Awake()
     {
@@ -44,12 +46,16 @@ public class F1AIBrain : MonoBehaviour
     {
         CountdownManager.OnCountdownFinished += UnlockAIBrain;
         CheckpointManager.OnRaceFinished += HandleRaceFinished;
+
+        // Optimizasyon: Lazer taramasını Update dışına alıp yavaşlatıyoruz
+        StartCoroutine(AntiBulldozerSensor());
     }
 
     private void OnDisable()
     {
         CountdownManager.OnCountdownFinished -= UnlockAIBrain;
         CheckpointManager.OnRaceFinished -= HandleRaceFinished;
+        StopAllCoroutines();
     }
 
     private void UnlockAIBrain() => isRaceStarted = true;
@@ -58,8 +64,28 @@ public class F1AIBrain : MonoBehaviour
     {
         if (finisherCar == transform.root)
         {
-            isCoolDownLap = true;
             maxThrottleLimit *= 0.5f;
+        }
+    }
+
+    // YENİLİK: Saniyede 60 kere lazer atmak yerine, saniyede 5 kere atar. Performansı kurtarır.
+    private IEnumerator AntiBulldozerSensor()
+    {
+        WaitForSeconds waitFast = new WaitForSeconds(0.2f);
+        while (true)
+        {
+            if (isRaceStarted)
+            {
+                isBlockedAhead = false;
+                if (Physics.Raycast(transform.position + (Vector3.up * 0.5f), transform.forward, out RaycastHit hit, frontSensorLength))
+                {
+                    if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Car"))
+                    {
+                        isBlockedAhead = true;
+                    }
+                }
+            }
+            yield return waitFast;
         }
     }
 
@@ -84,23 +110,9 @@ public class F1AIBrain : MonoBehaviour
         float desiredGas = 0f;
         float desiredBrake = 0f;
 
-        // --- YENİLİK: GÖRÜNMEZ SENSÖR (RAYCAST) KONTROLÜ ---
-        bool isBlockedAhead = false;
-
-        // Aracın merkezinden biraz yukarıdan ileriye doğru görünmez bir lazer atıyoruz
-        if (Physics.Raycast(transform.position + (Vector3.up * 0.5f), transform.forward, out RaycastHit hit, frontSensorLength))
-        {
-            // Eğer lazer "Player" veya "Car" etiketli bir şeye çarparsa, önümüz dolu demektir!
-            if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Car"))
-            {
-                isBlockedAhead = true;
-            }
-        }
-
-        // --- GAZ/FREN KARARI ---
+        // --- GAZ/FREN KARARI (Artık Update içinde Raycast yok!) ---
         if (isBlockedAhead)
         {
-            // ÇÖZÜM: Önünde araba varsa gazı anında kes ve hafif fren yap ki yapışmasın!
             desiredGas = 0f;
             desiredBrake = 0.4f;
         }
@@ -114,10 +126,7 @@ public class F1AIBrain : MonoBehaviour
             desiredBrake = 0f;
             desiredGas = maxThrottleLimit;
 
-            if (targetSpeed - currentSpeed < 5f)
-            {
-                desiredGas *= 0.5f;
-            }
+            if (targetSpeed - currentSpeed < 5f) desiredGas *= 0.5f;
         }
 
         Vector3 dirToTarget = (progressTracker.target.position - transform.position).normalized;

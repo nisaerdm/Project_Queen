@@ -11,6 +11,8 @@ public class CheckpointSingle : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (checkpointManager == null) return;
+
         if (other.CompareTag("Player") || other.CompareTag("Car"))
         {
             checkpointManager.PlayerThroughCheckpoint(this, other.transform.root);

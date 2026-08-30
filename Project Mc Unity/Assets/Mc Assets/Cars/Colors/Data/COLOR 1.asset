@@ -15,16 +15,15 @@ MonoBehaviour:
   isCustomDesign: 1
   normalMaterial: {fileID: 2100000, guid: 1b4b44f3570791142aa92d9b9181aef8, type: 2}
   customPartMaterials:
-  - {fileID: 2100000, guid: 97d0266b4a3c6cb41bd189232e3136be, type: 2}
-  - {fileID: 2100000, guid: 97d0266b4a3c6cb41bd189232e3136be, type: 2}
-  - {fileID: 2100000, guid: 97d0266b4a3c6cb41bd189232e3136be, type: 2}
-  - {fileID: 2100000, guid: 97d0266b4a3c6cb41bd189232e3136be, type: 2}
-  - {fileID: 3968457207494911804, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 3968457207494911804, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 6669795942215521391, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 6669795942215521391, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 4317664046061500746, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 4317664046061500746, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 4317664046061500746, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 4317664046061500746, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
-  - {fileID: 4317664046061500746, guid: 0eb93b0e540100042bf2c421c0ca8201, type: 3}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 861d0874b551c4e419fd9e6ddac6c5ed, type: 2}
+  - {fileID: 2100000, guid: 772a34b6b119af04bb2a36b18e27ef6f, type: 2}
+  - {fileID: 2100000, guid: 19891e9b91442c4449e9db2d83ce12fd, type: 2}
+  - {fileID: 2100000, guid: c43f1f93ac0b0104aa3f98f45ee2b021, type: 2}
+  - {fileID: 2100000, guid: 8012fe62a15ac674fb8035d2c0d62628, type: 2}
+  - {fileID: 2100000, guid: afb40cee6c113144fb0d2a1831bcdcb7, type: 2}

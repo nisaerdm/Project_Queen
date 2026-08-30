@@ -3,8 +3,6 @@ using UnityEngine.InputSystem;
 
 public class StartingGridInputLocker : MonoBehaviour
 {
-
-    //Oyun başında yarış başlayana kadar aracın hareketini engeller.
     [Header("Kilitlenecek Sistemler")]
     [Tooltip("Aracın üzerindeki Player Input bileşeni")]
     [SerializeField] private PlayerInput playerInput;

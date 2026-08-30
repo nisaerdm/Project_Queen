@@ -6,9 +6,6 @@ public class F1CollisionFeedback : MonoBehaviour
     [Header("Çarpışma Ayarları")]
     [Tooltip("Çarpışma anında araçların birbirini ne kadar şiddetle iteceği")]
     [SerializeField] private float collisionRepelForce = 15f;
-    
-    [Tooltip("Sadece bu etiketlere sahip objelerle çarpışıldığında tepki ver (Örn: Player, Car)")]
-    [SerializeField] private string[] targetTags = { "Player", "Car" };
 
     private Rigidbody rb;
     private float lastCollisionTime;
@@ -20,30 +17,20 @@ public class F1CollisionFeedback : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Peş peşe çok fazla çarpışma algılanıp aracı uzaya fırlatmasını engellemek için Cooldown (0.1 sn)
-        if (Time.time < lastCollisionTime + 0.1f) return;
+        // OPTİMİZASYON: Sürtünmelerde FPS drop yememek için Cooldown çeyrek saniyeye çekildi.
+        if (Time.time < lastCollisionTime + 0.25f) return;
 
-        // Çarptığımız obje geçerli bir araç mı?
-        bool isTargetValid = false;
-        foreach (string t in targetTags)
-        {
-            if (collision.gameObject.CompareTag(t))
-            {
-                isTargetValid = true;
-                break;
-            }
-        }
-
-        if (isTargetValid)
+        // OPTİMİZASYON: Array içinde string dolaşmak yerine direkt en hızlı metodu (CompareTag) kullanıyoruz.
+        if (collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Car"))
         {
             // 1. Çarpışma noktasını ve yönünü bul
             Vector3 collisionNormal = collision.contacts[0].normal;
-            
-            // 2. Y eksenini (Yukarı/Aşağı) sıfırla ki araçlar çarpışınca havaya uçup takla atmasın
+
+            // 2. Y eksenini (Yukarı/Aşağı) sıfırla ki araçlar havaya uçmasın
             collisionNormal.y = 0;
             collisionNormal.Normalize();
 
-            // 3. Mevcut ivmeyi anlık olarak zayıflat (Arcade Controller'ın inatlaşmasını kırmak için)
+            // 3. Mevcut ivmeyi anlık olarak zayıflat
             rb.linearVelocity *= 0.5f;
 
             // 4. Aracı çarpışma noktasının tersine doğru it (Sekme hissi)

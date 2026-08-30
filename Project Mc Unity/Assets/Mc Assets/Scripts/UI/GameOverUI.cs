@@ -13,9 +13,7 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI rankText;
 
     [Header("Süre Referansları (Lego Modülü)")]
-    [Tooltip("Yarışın güncel süresini ekrana basacağımız UI yazısı")]
     [SerializeField] private TextMeshProUGUI currentTimeText;
-    [Tooltip("En iyi süreyi ekrana basacağımız UI yazısı")]
     [SerializeField] private TextMeshProUGUI bestTimeText;
 
     [Tooltip("Yarış süresini tutan ana sayaç scriptimiz")]
@@ -45,7 +43,6 @@ public class GameOverUI : MonoBehaviour
 
     private void HandleRaceFinished(Transform carTransform, bool isPlayer)
     {
-        // Bitiş çizgisine gelen araç YAPAY ZEKA ise paneli açma, sadece OYUNCU bitirdiğinde aç!
         if (isPlayer)
         {
             ShowGameOverScreen(carTransform);
@@ -54,13 +51,14 @@ public class GameOverUI : MonoBehaviour
 
     private void ShowGameOverScreen(Transform playerTransform)
     {
-        // 1. Paneli Görünür Yap
-        gameOverPanel.SetActive(true);
-        titleText.text = "YARIŞ TAMAMLANDI!";
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+            if (titleText != null) titleText.text = "YARIŞ TAMAMLANDI!";
+        }
 
-        // 2. Sıralamayı Çek
         PlacementUI placementUI = Object.FindFirstObjectByType<PlacementUI>();
-        if (placementUI != null)
+        if (placementUI != null && rankText != null)
         {
             TextMeshProUGUI livePlacementText = placementUI.GetComponentInChildren<TextMeshProUGUI>();
             if (livePlacementText != null)
@@ -69,20 +67,14 @@ public class GameOverUI : MonoBehaviour
             }
         }
 
-        // 3. Süreyi Hesapla ve Kaydet
         if (raceTimer != null)
         {
-            // RaceTimer içinden o anki güncel süreyi float cinsinden alıyoruz
             float finalTime = raceTimer.GetCurrentTime();
-
-            // Rekoru sadece bulunduğumuz haritaya özel kaydetmek için sahne adını çekiyoruz
             string currentLevelName = SceneManager.GetActiveScene().name;
             string saveKey = "BestTime_" + currentLevelName;
 
-            // Önceden kaydedilmiş rekoru oku (Yoksa çok büyük bir sayı döner ki ilk rekor kolay kırılsın)
             float bestTime = PlayerPrefs.GetFloat(saveKey, Mathf.Infinity);
 
-            // Yeni süre rekordan daha kısaysa, yeni rekoru cihaza kaydet
             if (finalTime < bestTime)
             {
                 bestTime = finalTime;
@@ -90,19 +82,11 @@ public class GameOverUI : MonoBehaviour
                 PlayerPrefs.Save();
             }
 
-            // Ekrana formatlanmış şekilde bas
             if (currentTimeText != null) currentTimeText.text = $"Süreniz: {FormatTime(finalTime)}";
             if (bestTimeText != null) bestTimeText.text = $"En İyi Süre: {FormatTime(bestTime)}";
         }
-        else
-        {
-            Debug.LogWarning("[GameOverUI] HATA: RaceTimer referansı atanmamış!");
-        }
     }
 
-    /// <summary>
-    /// Float saniye cinsinden gelen süreyi "Dakika:Saniye:Salise" formatına dönüştürür
-    /// </summary>
     private string FormatTime(float time)
     {
         int minutes = (int)(time / 60f);

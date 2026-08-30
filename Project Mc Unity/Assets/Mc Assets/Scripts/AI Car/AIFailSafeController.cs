@@ -5,7 +5,7 @@ using UnityEngine;
 public class AIFailSafeController : MonoBehaviour
 {
     [Header("Fail-Safe Ayarları")]
-    [Tooltip("Aracın bir sonraki checkpoint'e ulaşması için verilen maksimum süre (saniye). Bu süre aşılırsa araç takılmış/düşmüş sayılır.")]
+    [Tooltip("Aracın bir sonraki checkpoint'e ulaşması için verilen maksimum süre (saniye).")]
     [SerializeField] private float maxTimeWithoutCheckpoint = 12f;
 
     private RespawnController respawnController;
@@ -36,10 +36,9 @@ public class AIFailSafeController : MonoBehaviour
 
     public void StartMonitoring()
     {
-        if (checkpointManager != null)
-        {
-            lastCheckpointIndex = checkpointManager.GetCarNextCheckpointIndex(transform);
-        }
+        if (checkpointManager == null) return; // Optimizasyon: Yoksa hiç başlama
+
+        lastCheckpointIndex = checkpointManager.GetCarNextCheckpointIndex(transform);
         timeWithoutProgress = 0f;
 
         if (failSafeRoutine != null) StopCoroutine(failSafeRoutine);
@@ -57,20 +56,17 @@ public class AIFailSafeController : MonoBehaviour
 
     private IEnumerator StuckCheckRoutine()
     {
+        // Sonsuz döngüden önce bekleme objesini yaratıp çöpten kurtuluyoruz (GC Alloc)
+        WaitForSeconds waitOneSec = new WaitForSeconds(1f);
+
         while (true)
         {
-            // Performansı korumak için her frame yerine saniyede bir kontrol ediyoruz
-            yield return new WaitForSeconds(1f);
+            yield return waitOneSec;
 
-            // Eğer araç zaten ışınlanıyorsa (beyni kapalıysa) süreyi sayma, pas geç
             if (aiBrain != null && !aiBrain.enabled) continue;
 
-            if (checkpointManager == null) continue;
-
-            // Aracın gitmesi gereken sıradaki Checkpoint'i soruyoruz
             int currentTargetIndex = checkpointManager.GetCarNextCheckpointIndex(transform);
 
-            // Eğer hedef checkpoint değiştiyse (yani başarıyla bir sonrakine geçtiyse) süreyi sıfırla
             if (currentTargetIndex != lastCheckpointIndex)
             {
                 lastCheckpointIndex = currentTargetIndex;
@@ -78,10 +74,8 @@ public class AIFailSafeController : MonoBehaviour
             }
             else
             {
-                // Hedef değişmediyse kronomereyi 1 saniye artır
                 timeWithoutProgress += 1f;
 
-                // Eğer limit aşıldıysa, ameliyat sürecini başlat
                 if (timeWithoutProgress >= maxTimeWithoutCheckpoint)
                 {
                     StartCoroutine(ExecuteFailSafeSequence());
@@ -92,21 +86,17 @@ public class AIFailSafeController : MonoBehaviour
 
     private IEnumerator ExecuteFailSafeSequence()
     {
-        Debug.Log($"[AIFailSafe] {gameObject.name} {maxTimeWithoutCheckpoint} saniyedir checkpoint geçemedi (Düşmüş olabilir). Işınlanıyor...");
+        // Debug.Log'u mobil performans için yoruma alıyoruz. Çok işlemci yer!
+        // Debug.Log($"[AIFailSafe] {gameObject.name} ışınlanıyor...");
 
-        // 1. AI beynini geçici olarak uyut
         if (aiBrain != null) aiBrain.enabled = false;
 
-        // 2. Işınlamayı tetikle
         respawnController.ForceRespawn();
 
-        // 3. Işınlanma işleminin ve fiziklerin (isKinematic) tamamlanması için bekle
         yield return new WaitForSeconds(0.5f);
 
-        // 4. Araç güvenli bir şekilde piste oturduğunda AI beynini tekrar uyandır
         if (aiBrain != null) aiBrain.enabled = true;
 
-        // 5. Işınlandıktan sonra süreleri ve hedefleri sıfırla ki hemen tekrar ışınlanmasın
         timeWithoutProgress = 0f;
         if (checkpointManager != null)
         {

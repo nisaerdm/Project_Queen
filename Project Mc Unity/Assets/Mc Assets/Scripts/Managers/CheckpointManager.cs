@@ -63,23 +63,25 @@ public class CheckpointManager : MonoBehaviour
                 if (progress.currentLap > 1)
                 {
                     int completedLap = progress.currentLap - 1;
-                    Debug.Log($" [{rootCar.name}] Tur {completedLap} Tamamlandı!");
                     OnLapCompleted?.Invoke(rootCar, completedLap);
 
                     if (completedLap >= totalLaps)
                     {
-                        bool isPlayer = rootCar.GetComponent<F1PlayerInput>() != null;
+                        // OPTİMİZASYON: GetComponent yerine daha hızlı olan CompareTag kullanıldı
+                        bool isPlayer = rootCar.CompareTag("Player");
                         OnRaceFinished?.Invoke(rootCar, isPlayer);
                     }
                 }
             }
 
-            Debug.Log($" [{rootCar.name}] Doğru Geçiş! Sıradaki Checkpoint: {((progress.nextCheckpointIndex + 1) % checkpointList.Count)}");
+            // OPTİMİZASYON: Mobil performansı artırmak için Debug logları gizlendi
+            // Debug.Log($" [{rootCar.name}] Doğru Geçiş! Sıradaki Checkpoint: {((progress.nextCheckpointIndex + 1) % checkpointList.Count)}");
+
             progress.nextCheckpointIndex = (progress.nextCheckpointIndex + 1) % checkpointList.Count;
         }
         else
         {
-            Debug.Log($" [{rootCar.name}] Yanlış Yön veya Atlanan Checkpoint! (Beklenen: {progress.nextCheckpointIndex}, Girilen: {hitCheckpointIndex})");
+            // Debug.Log($" [{rootCar.name}] Yanlış Yön veya Atlanan Checkpoint!");
             OnWrongWay?.Invoke(rootCar);
         }
     }
@@ -110,10 +112,8 @@ public class CheckpointManager : MonoBehaviour
 
         int lastIndex = carTrackers[rootCar].nextCheckpointIndex - 1;
 
-        // ÇÖZÜM: Eğer son geçilen checkpoint -1'e düşerse (yeni turun başlangıcı)
         if (lastIndex < 0)
         {
-            // Araç yarışa yeni başladıysa 0'a, ama bir tur bitirdiyse listenin en sonuna yolla
             lastIndex = carTrackers[rootCar].currentLap > 0 ? checkpointList.Count - 1 : 0;
         }
 

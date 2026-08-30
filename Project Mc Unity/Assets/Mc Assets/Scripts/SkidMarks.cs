@@ -15,23 +15,29 @@ namespace ArcadeVP
             smoke = GetComponent<ParticleSystem>();
             skidMark = GetComponent<TrailRenderer>();
 
-            skidMark.emitting = false;
-            skidMark.startWidth = carController.skidWidth;
+            if (skidMark != null && carController != null)
+            {
+                skidMark.emitting = false;
+                skidMark.startWidth = carController.skidWidth;
+            }
         }
 
         private void OnEnable()
         {
-            skidMark.enabled = true;
+            if (skidMark != null) skidMark.enabled = true;
         }
 
         private void OnDisable()
         {
-            skidMark.enabled = false;
+            if (skidMark != null) skidMark.enabled = false;
         }
 
         private void FixedUpdate()
         {
-            if (carController != null && carController.IsTireSkidding())
+            // OPTİMİZASYON KORUMASI: Araba yedeğe alınırsa veya parçalanırsa kod çökmesin
+            if (carController == null || skidMark == null || smoke == null) return;
+
+            if (carController.IsTireSkidding())
             {
                 skidMark.emitting = true;
                 if (!smoke.isPlaying) smoke.Play();

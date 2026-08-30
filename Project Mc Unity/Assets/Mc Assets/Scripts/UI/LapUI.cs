@@ -5,9 +5,6 @@ public class LapUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI lapText;
 
-    // CheckpointManager referansına artık gerek kalmadı, PlayerPrefs kullanacağız
-    // [SerializeField] private CheckpointManager checkpointManager; 
-
     private void OnEnable()
     {
         CheckpointManager.OnLapCompleted += HandleLapCompleted;
@@ -20,15 +17,16 @@ public class LapUI : MonoBehaviour
 
     private void Start()
     {
-        // ÇÖZÜM: Scriptlerin çalışma sırası (Race Condition) çakışmasını engellemek için
-        // Toplam turu doğrudan hafızadan kendimiz okuyoruz
-        int totalLaps = PlayerPrefs.GetInt("Race_Laps", 1);
-        lapText.text = $"Tur 1/{totalLaps}";
+        if (lapText != null)
+        {
+            int totalLaps = PlayerPrefs.GetInt("Race_Laps", 1);
+            lapText.text = $"1/{totalLaps}";
+        }
     }
 
     private void HandleLapCompleted(Transform carTransform, int completedLaps)
     {
-        if (carTransform.GetComponent<F1PlayerInput>() != null)
+        if (carTransform.CompareTag("Player"))
         {
             UpdateUI(completedLaps);
         }
@@ -36,8 +34,10 @@ public class LapUI : MonoBehaviour
 
     private void UpdateUI(int completedLaps)
     {
-        int currentDisplayLap = completedLaps + 1;
+        if (lapText == null) return;
+
         int totalLaps = PlayerPrefs.GetInt("Race_Laps", 1);
+        int currentDisplayLap = completedLaps + 1;
 
         currentDisplayLap = Mathf.Clamp(currentDisplayLap, 1, totalLaps);
         lapText.text = $"Tur {currentDisplayLap}/{totalLaps}";

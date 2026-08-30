@@ -21,26 +21,27 @@ public class PlacementUI : MonoBehaviour
 
     private void UpdatePlacementUI(List<Transform> currentStandings)
     {
-        // 1. Oyuncu aracı henüz bulunamadıysa bulmayı dene
+        // 1. Oyuncu aracı henüz bulunamadıysa, listeyi tarayıp bul
         if (playerCarRoot == null)
         {
-            F1PlayerInput playerInput = UnityEngine.Object.FindFirstObjectByType<F1PlayerInput>(FindObjectsInactive.Include);
+            // OPTİMİZASYON: Tüm sahneyi aramak yerine sadece bize gelen kısa listeyi (yarışan araçları) tarıyoruz
+            foreach (Transform car in currentStandings)
+            {
+                if (car != null && car.CompareTag("Player"))
+                {
+                    playerCarRoot = car;
+                    break;
+                }
+            }
 
-            if (playerInput != null)
-            {
-                // ÇÖZÜM: Listenin içindekiyle eşleşmesi için transform.root'u alıyoruz
-                playerCarRoot = playerInput.transform.root;
-            }
-            else
-            {
-                return;
-            }
+            // Hala bulamadıysa (araç spawn olmadıysa) çık
+            if (playerCarRoot == null) return;
         }
 
         // 2. Sıralamayı Hesapla
         int playerRank = currentStandings.IndexOf(playerCarRoot) + 1;
 
-        if (playerRank > 0)
+        if (playerRank > 0 && placementText != null)
         {
             placementText.text = $"{playerRank} / {currentStandings.Count}";
         }

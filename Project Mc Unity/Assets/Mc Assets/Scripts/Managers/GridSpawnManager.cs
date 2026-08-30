@@ -18,22 +18,17 @@ public class GridSpawnManager : MonoBehaviour
     {
         if (spawnPoints.Count == 0)
         {
-            Debug.LogError("[GridSpawnManager] HATA: Spawn noktaları atanmamış!");
             return;
         }
 
         if (vehiclePrefabs.Count == 0)
         {
-            Debug.LogWarning("[GridSpawnManager] UYARI: Spawnlanacak araç prefab'ı yok!");
             return;
         }
 
         List<GameObject> spawnedVehicles = new List<GameObject>();
 
-        // YENİLİK: Lobiden seçilen araç sayısını oku (Varsayılan 2)
         int targetCarCount = PlayerPrefs.GetInt("Race_Cars", 2);
-
-        // Güvenlik kalkanı: İstenen araç sayısı, elimizdeki prefab veya grid noktasından fazla olamaz
         int spawnCount = Mathf.Min(targetCarCount, vehiclePrefabs.Count, spawnPoints.Count);
 
         List<Transform> activeSpawnPoints = spawnPoints.GetRange(0, spawnCount);
@@ -63,7 +58,6 @@ public class GridSpawnManager : MonoBehaviour
             spawnedVehicles.Add(vehicle);
         }
 
-        Debug.Log($"[GridSpawnManager] {spawnCount} adet araç başarıyla boşluksuz ve rastgele grid noktalarına yerleştirildi.");
         OnVehiclesSpawned?.Invoke(spawnedVehicles);
     }
 

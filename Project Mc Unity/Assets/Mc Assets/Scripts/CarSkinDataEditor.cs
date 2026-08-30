@@ -10,13 +10,11 @@ public class CarSkinDataEditor : Editor
         CarSkinData skinData = (CarSkinData)target;
         serializedObject.Update();
 
-        // Tik kutusunu çizdir
         SerializedProperty isCustomProp = serializedObject.FindProperty("isCustomDesign");
         EditorGUILayout.PropertyField(isCustomProp, new GUIContent("Özel Çizim mi?"));
 
         EditorGUILayout.Space();
 
-        // Sihirli Kısım: Tik açıksa diziyi, kapalıysa tek materyali göster
         if (skinData.isCustomDesign)
         {
             SerializedProperty customPartsProp = serializedObject.FindProperty("customPartMaterials");
